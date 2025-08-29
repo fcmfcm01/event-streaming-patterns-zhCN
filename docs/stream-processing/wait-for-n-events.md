@@ -1,39 +1,33 @@
 ---
 seo:
-  title: Wait For N Events
-  description: An application can wait to trigger processing until an Event Stream has received a set number of Events.
+  title: 等待N个事件
+  description: 应用程序可以等待触发处理，直到事件流接收到设定数量的事件。
 ---
 
-# Wait For N Events
+# 等待N个事件
 
-Sometimes [Events](../event/event.md) become significant after they've
-happened several times.
+有时[事件](../event/event.md)在发生几次后才变得重要。
 
-A user can try to log in five times, but after that we'll lock their
-account. A parcel delivery will be attempted three times before we ask
-the customer to collect it from the depot. A gamer gets a trophy after
-they've killed their hundredth Blarg.
+用户可以尝试登录五次，但之后我们将锁定他们的账户。包裹递送将尝试三次，然后我们要求客户从仓库收集它。游戏玩家在杀死第一百个Blarg后获得奖杯。
 
-How can we efficiently watch for logically similar Events?
+我们如何有效地监视逻辑上相似的事件？
 
-## Problem
+## 问题
 
-How can an application wait for a certain number of Events to occur
-before performing processing?
+应用程序如何等待一定数量的事件发生后再执行处理？
 
-## Solution
+## 解决方案
 ![wait for N events](../img/wait-for-n-events.svg)
 
-To consider related Events as a group, we need to group them by a given key,
-and then count the occurrences of that key.
+要将相关事件作为一个组考虑，我们需要按给定键对它们进行分组，然后计算该键的出现次数。
 
-## Implementation
+## 实现
 
-With [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/), we can easily create a [Projection Table](../table/projection-table.md) that groups and counts Events by a particular key.
+使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)，我们可以轻松创建一个[投影表](../table/projection-table.md)，按特定键对事件进行分组和计数。
 
-As an example, imagine that we are handling very large financial transactions. We only want to process these transactions after they've been reviewed and approved by two managers.
+作为示例，想象我们正在处理非常大的金融交易。我们只想在两名经理审查和批准这些交易后处理它们。
 
-We'll start with a table of signed Events from managers:
+我们将从经理签名事件表开始：
 
 ```sql
 CREATE TABLE trade_reviews (
@@ -44,7 +38,7 @@ CREATE TABLE trade_reviews (
 );
 ```
 
-We'll group reviews by their `trade_id`, and then `COUNT()` how many approvals (`approved = TRUE`) we see for each, and only keep those with at least two (`HAVING COUNT(*) >= 2`):
+我们将按`trade_id`对审查进行分组，然后`COUNT()`我们为每个看到的批准数量（`approved = TRUE`），只保留至少有两个的（`HAVING COUNT(*) >= 2`）：
 
 ```sql
 CREATE TABLE approved_trades AS
@@ -55,13 +49,13 @@ CREATE TABLE approved_trades AS
     HAVING COUNT(*) >= 2;
 ```
 
-Query that table in one terminal:
+在一个终端中查询该表：
 
 ```
 SELECT * FROM approved_trades;
 ```
 
-Insert some data in another terminal:
+在另一个终端中插入一些数据：
 
 ```sql
 INSERT INTO trade_reviews VALUES
@@ -75,7 +69,7 @@ INSERT INTO trade_reviews VALUES
     (3, 'carol', '4adb7c', TRUE);
 ```
 
-This produces a the trades that are ready to process:
+这产生了准备处理的交易：
 
 ```noformat
    trade_id            approvals
@@ -83,7 +77,7 @@ This produces a the trades that are ready to process:
           4                    2
 ```
 
-## References
+## 参考资料
 
-* See also the [Event Grouping](../stream-processing/event-grouper.md) pattern, for a more general discussion of `GROUP BY` operations.
-* See chapter 15, "Building Streaming Services", of [Designing Event Driven Systems](https://www.confluent.io/designing-event-driven-systems/) for further discussion.
+* 另请参阅[事件分组](../stream-processing/event-grouper.md)模式，了解`GROUP BY`操作的更一般讨论。
+* 有关进一步讨论，请参阅[设计事件驱动系统](https://www.confluent.io/designing-event-driven-systems/)的第15章"构建流服务"。

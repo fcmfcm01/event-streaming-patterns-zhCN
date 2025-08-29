@@ -1,50 +1,32 @@
 ---
 seo:
-  title: Event Gateway
-  description: A good Event Gateway provides the broadest possible access to different users of the Event Store.
+  title: 事件网关
+  description: 一个好的事件网关为事件存储的不同用户提供最广泛的访问。
 ---
 
-# Event Gateway
+# 事件网关
 
-One of the key benefits of adopting an
-[Event](../event/event.md)-first architecture is to foster
-collaboration. Our aim is to ensure that Team A can produce data, Team
-B can process it and Team C can report on it, with only one thing
-coupling the teams together - the data itself.  Teams shouldn't have
-to agree on shared libraries, synchronized release schedules, or
-common tooling. Data becomes the one true interface.
+采用[事件](../event/event.md)优先架构的关键好处之一是促进协作。我们的目标是确保团队A可以产生数据，团队B可以处理它，团队C可以报告它，只有一个东西将团队联系在一起——数据本身。团队不应该就共享库、同步发布计划或通用工具达成一致。数据成为唯一真正的接口。
 
-In reality though, each team will still have to communicate with the
-[Event Store][event_store] itself. How do we maximize access? How do
-we ensure that every team can use the event store, without insisting
-they choose from a shortlist of supported languages?  How do we
-accommodate the team that insists on using Idris<sup>+</sup>?
+但在现实中，每个团队仍然必须与[事件存储][event_store]本身通信。我们如何最大化访问？我们如何确保每个团队都可以使用事件存储，而不坚持他们从支持语言的短列表中选择？我们如何容纳坚持使用Idris<sup>+</sup>的团队？
 
-<i><sup>+</sup>Or Haskell, or Rust, or Erlang, or whatever other
-language we didn't plan for...</i>
+<i><sup>+</sup>或Haskell，或Rust，或Erlang，或我们没有想到的任何其他语言...</i>
 
-## Problem
+## 问题
 
-How does an an [Event Streaming
-Platform](../event-stream/event-streaming-platform.md) provide access
-to the widest-possible range of users?
+[事件流平台](../event-stream/event-streaming-platform.md)如何为最广泛的用户提供访问？
 
-## Solution
+## 解决方案
 
 ![event-gateway](../img/event-gateway.svg)
 
-Provide an event gateway via a standardized, well-supported interface
-that gives access to the widest possible range of users.
+通过标准化、良好支持的接口提供事件网关，为最广泛的用户提供访问。
 
-## Implementation
+## 实现
 
-Confluent provides a broad set of [REST APIs][rest_apis] that allow any
-language or CLI to access the event store using HTTP(S). Further, it provides
-support to produce and consume Apache Kafka® data, formatted as JSON, Protobuf, Avro or
-even raw base64-encoded bytes.
+Confluent提供了一套广泛的[REST API][rest_apis]，允许任何语言或CLI使用HTTP(S)访问事件存储。此外，它还提供支持来生产和消费Apache Kafka®数据，格式为JSON、Protobuf、Avro甚至原始base64编码字节。
 
-As a simple example, we can post JSON-encoded events to a topic called
-`sales` using [curl][curl]:
+作为一个简单的示例，我们可以使用[curl][curl]将JSON编码的事件发布到名为`sales`的主题：
 
 ```sh
 curl -X POST \
@@ -74,19 +56,14 @@ curl -X POST \
 }
 ```
 
-## Considerations
+## 注意事项
 
-In a perfect world, every Event Streaming Platform (and every relational
-database) would have first-class support for every language. Realistically some
-languages will be better accommodated than others, but we can still ensure
-every language has access to every important feature through a standards-based
-interface.
+在完美的世界中，每个事件流平台（和每个关系数据库）都会对每种语言提供一流的支持。实际上，某些语言会比其他语言更好地被容纳，但我们仍然可以通过基于标准的接口确保每种语言都能访问每个重要功能。
 
-## References
+## 参考资料
 
-* The [Confluent REST APIs][rest_apis] documentation
+* [Confluent REST API][rest_apis]文档
 
 [event_store]: ../event-storage/event-store.md
 [rest_apis]: https://docs.confluent.io/platform/current/kafka-rest/index.html
 [curl]: https://curl.se/
-

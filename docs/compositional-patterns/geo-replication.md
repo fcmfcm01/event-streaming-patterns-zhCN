@@ -1,63 +1,47 @@
 ---
 seo:
-  title: Geo Replication
-  description: Geo Replication enables multiple Event Streaming Platforms to be connected so that events available in one site are also available on the others
+  title: 地理复制
+  description: 地理复制使多个事件流平台能够连接，使得在一个站点可用的事件在其他站点也可用
 ---
 
-# Geo Replication
+# 地理复制
 
-Many architectures have streams of events deployed across multiple datacenters spanning boundaries of [Event Streaming Platforms](../event-stream/event-streaming-platform.md), datacenters, or geographical regions.
-In these situations, it may be useful for client applications in one event streaming platform to have access to [Events](../event/event.md) produced in another one.
-All clients shouldn't be forced to read from the source event streaming platform, which can incur high latency and data egress costs.
-Instead, with a move-once-read-many approach, the data can be replicated to a local datacenter where clients can do all their processing quickly and cheaply.
+许多架构都有跨越[事件流平台](../event-stream/event-streaming-platform.md)、数据中心或地理区域边界部署在多个数据中心的事件流。在这些情况下，一个事件流平台中的客户端应用程序能够访问在另一个平台中产生的[事件](../event/event.md)可能是有用的。所有客户端不应该被迫从源事件流平台读取，这可能会产生高延迟和数据出口成本。相反，采用一次移动多次读取的方法，数据可以复制到本地数据中心，客户端可以在那里快速且廉价地进行所有处理。
 
+## 问题
 
-## Problem
+如何连接多个[事件流平台](../event-stream/event-streaming-platform.md)，使得在一个站点可用的事件在其他站点也可用？
 
-How can multiple [Event Streaming Platforms](../event-stream/event-streaming-platform.md) be connected so that events available in one site are also available on the others?
-
-
-## Solution
-
+## 解决方案
 ![geo-replication](../img/geo-replication.svg)
-Create a connection between the two [Event Streaming Platforms](../event-stream/event-streaming-platform.md), enabling the destination platform to read from the source one.
-Ideally this is done in realtime such that as new events are published in the source event streaming platform, they can be immediately copied, byte for byte, to the destination event streaming platform.
-This allows the client applications in the destination to leverage the same set of data.
 
+在两个[事件流平台](../event-stream/event-streaming-platform.md)之间创建连接，使目标平台能够从源平台读取。理想情况下，这是实时完成的，这样当新事件在源事件流平台中发布时，它们可以立即逐字节复制到目标事件流平台。这允许目标中的客户端应用程序利用相同的数据集。
 
-## Implementation
+## 实现
 
-Typically, replication is not enabled on all event streams in practice. There are always exceptions, organizational limitations, technical constraints, or other reasons why we wouldn't want to copy absolutely everything.
-Instead, we can do this on a per-stream basis, where we can map a source stream to a destination stream.
+通常，在实践中并非所有事件流都启用复制。总是有例外、组织限制、技术约束或其他原因，我们不想复制绝对所有内容。相反，我们可以基于每个流进行此操作，在那里我们可以将源流映射到目标流。
 
-With Apache Kafka®, we can do this in one of several ways.
+使用Apache Kafka®，我们可以通过以下几种方式之一来实现这一点。
 
+### 选项1：集群链接
 
-### Option 1: Cluster Linking
-
-[Cluster Linking](https://docs.confluent.io/cloud/current/multi-cloud/cluster-linking.html) enables easy data sharing between event streaming platforms, mirroring Kafka topics (i.e., streams) across them.
-Because Cluster Linking uses native replication protocols, client applications can easily failover in the case of a disaster recovery scenario.
+[集群链接](https://docs.confluent.io/cloud/current/multi-cloud/cluster-linking.html)使事件流平台之间的数据共享变得容易，在它们之间镜像Kafka主题（即流）。因为集群链接使用原生复制协议，客户端应用程序在灾难恢复场景中可以轻松进行故障转移。
 
 ```sh
 confluent kafka link create east-west ...
 confluent kafka mirror create <destination topic> --link east-west ...
 ```
 
-Other messaging systems like RabbitMQ and ActiveMQ provide similar functionality, but without the same levels of parallelism.
+其他消息系统如RabbitMQ和ActiveMQ提供类似功能，但没有相同级别的并行性。
 
+### 选项2：基于Connect的复制
 
-### Option 2: Connect-based Replication
+操作员可以使用Confluent的[复制器](https://docs.confluent.io/cloud/current/clusters/migrate-topics-on-cloud-clusters.html)或Kafka的[MirrorMaker](https://kafka.apache.org/documentation/#georeplication)（版本2）设置集群间数据流，这些工具在不同Kafka环境之间复制数据。与集群链接不同，这些是基于Kafka Connect构建的单独服务，具有内置的生产者和消费者。
 
-Operators can set up inter-cluster data flows with Confluent's [Replicator](https://docs.confluent.io/cloud/current/clusters/migrate-topics-on-cloud-clusters.html) or Kafka's [MirrorMaker](https://kafka.apache.org/documentation/#georeplication) (version 2), tools that replicate data between different Kafka environments.
-Unlike Cluster Linking, these are separate services built upon Kafka Connect, with built-in producers and consumers.
+## 注意事项
 
+请注意，事件流平台之间的这种复制是异步的，这意味着在源中记录的事件可能不会立即在目标中可用。事件流平台之间也有同步复制（例如[多区域集群](https://docs.confluent.io/platform/current/multi-dc-deployments/index.html)），但这通常仅限于事件流平台在同一操作域内的情况。
 
-## Considerations
+## 参考资料
 
-Note that this type of replication between event streaming platforms is asynchronous, which means an event that is recorded in the source may not be immediately available at the destination.
-There is also synchronous replication across event streaming platforms (e.g. [Multi Region Clusters](https://docs.confluent.io/platform/current/multi-dc-deployments/index.html)) but this is often limited to when the event streaming platforms are in the same operational domain.
-
-
-## References
-
-* This pattern is derived from [Messaging Bridge](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessagingBridge.html) in Enterprise Integration Patterns by Gregor Hohpe and Bobby Woolf
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息桥接](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessagingBridge.html)

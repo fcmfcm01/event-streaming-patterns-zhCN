@@ -1,24 +1,27 @@
 ---
 seo:
-  title: Event Mapper
-  description: The Event Mapper moves data between domain objects and Events in an Event Streaming Platform.
+  title: 事件映射器
+  description: 事件映射器在事件流平台中的域对象和事件之间移动数据。
 ---
 
-# Event Mapper
-Traditional applications, which work with data at rest, and [Event Processing Applications](event-processing-application.md), which work with data in motion, may need to share data via an [Event Streaming Platform](../event-stream/event-streaming-platform.md). These applications need a common mechanism to convert data from [Events](../event/event.md) to domain objects and vice versa.
+# 事件映射器
 
-## Problem
-How can I move data between domain objects in an application’s internal data model and Events in an Event Streaming Platform, while keeping the two independent of each other?
+处理静态数据的传统应用程序和处理动态数据的[事件处理应用程序](event-processing-application.md)可能需要通过[事件流平台](../event-stream/event-streaming-platform.md)共享数据。这些应用程序需要一个通用机制来将数据从[事件](../event/event.md)转换为域对象，反之亦然。
 
-## Solution
+## 问题
+
+如何在应用程序内部数据模型中的域对象和事件流平台中的事件之间移动数据，同时保持两者相互独立？
+
+## 解决方案
 ![event-mapper](../img/event-mapper.svg)
 
-An Event Mapper provides independence between the traditional application and the Event Streaming Platform, so that neither is aware of the other (and ideally, neither is even aware of the event mapper itself).
+事件映射器在传统应用程序和事件流平台之间提供独立性，使两者都不知道对方（理想情况下，两者甚至都不知道事件映射器本身）。
 
-Create an Event Mapper, or use an existing one, to map the [domain model](https://en.wikipedia.org/wiki/Domain_model) (or the application's internal data model) to the data formats accepted by the Event Streaming Platform, and vice versa. The Event Mapper reads the domain model and converts it into outgoing Events, which are sent to the Event Streaming Platform. Conversely, an Event Mapper can be used to create or update domain objects based on incoming Events.
+创建事件映射器，或使用现有的事件映射器，将[域模型](https://en.wikipedia.org/wiki/Domain_model)（或应用程序的内部数据模型）映射到事件流平台接受的数据格式，反之亦然。事件映射器读取域模型并将其转换为发送到事件流平台的传出事件。相反，事件映射器可用于基于传入事件创建或更新域对象。
 
-## Implementation
-In this example, we use the Java producer client of Apache Kafka® to implement an Event Mapper that constructs an [Event](../event/event.md) (`PublicationEvent`) from the domain model object (`Publication`) before the event is written to an [Event Stream](../event-stream/event-stream.md) (called a "topic" in Kafka).
+## 实现
+
+在此示例中，我们使用Apache Kafka®的Java生产者客户端来实现事件映射器，该映射器在事件写入[事件流](../event-stream/event-stream.md)（在Kafka中称为"主题"）之前从域模型对象（`Publication`）构造[事件](../event/event.md)（`PublicationEvent`）。
 
 ```java
 private final IMapper domainToEventMapper = mapperFactory.buildMapper(Publication.class);
@@ -29,7 +32,7 @@ public void newPublication(String author, String title) {
   producer.send(author /* event key */, domainToEventMapper.map(newPub));
 ```
 
-We can implement the reverse operation in a second Event Mapper that converts `PublicationEvent` Events back into domain object updates:
+我们可以在第二个事件映射器中实现反向操作，将`PublicationEvent`事件转换回域对象更新：
 ```java
 private final IMapper eventToDomainMapper = mapperFactory.buildMapper(Publication.class);
 private final Consumer<String, PublicationEvent> consumer = ...
@@ -39,10 +42,11 @@ public void updatePublication(PublicationEvent pubEvent) {
   domainStore.update(newPub);
 ```
 
-## Considerations
+## 注意事项
 
-The Event Mapper may optionally validate the schema of the converted objects. For details, see the [Schema Validator](../event-source/schema-validator.md) pattern.
+事件映射器可以选择性地验证转换对象的模式。有关详细信息，请参阅[模式验证器](../event-source/schema-validator.md)模式。
 
-## References
-* This pattern is derived from [Messaging Mapper](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessagingMapper.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
-* See also the [Event Serializer](../event/event-serializer.md) and [Event Deserializer](../event/event-deserializer.md) patterns.
+## 参考资料
+
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息映射器](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessagingMapper.html)。
+* 另请参阅[事件序列化器](../event/event-serializer.md)和[事件反序列化器](../event/event-deserializer.md)模式。

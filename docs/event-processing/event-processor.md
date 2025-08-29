@@ -1,33 +1,32 @@
 ---
 seo:
-  title: Event Processor
-  description: An Event Processor applies a specific processing operation to an event. Event Processors are typically used and composed by larger Event Processing Applications. 
+  title: 事件处理器
+  description: 事件处理器对事件应用特定的处理操作。事件处理器通常被更大的事件处理应用程序使用和组合。
 ---
 
-# Event Processor
-Once our data -- such as financial transactions, tracking information for shipments, IoT sensor measurements, etc. -- is set in motion as [streams of events](../event-stream/event-stream.md) on an [Event Streaming Platform](../event-stream/event-streaming-platform.md), we want to put it to use and create value from it. How do we do this?
+# 事件处理器
+一旦我们的数据——如金融交易、货物跟踪信息、物联网传感器测量等——在[事件流平台](../event-stream/event-streaming-platform.md)上作为[事件流](../event-stream/event-stream.md)开始运动，我们就想利用它并从中创造价值。我们如何做到这一点？
 
-## Problem
-How can we process [Events](../event/event.md) in an [Event Streaming Platform](../event-stream/event-streaming-platform.md)?
+## 问题
+我们如何在[事件流平台](../event-stream/event-streaming-platform.md)中处理[事件](../event/event.md)？
 
-## Solution
+## 解决方案
 ![event-processor](../img/event-processor.svg)
-We build an Event Processor, which is a component that reads [Events](../event/event.md) and processes them, possibly writing new Events as the result of its processing. An Event Processor may act as an [Event Source](../event-source/event-source.md) and/or [Event Sink](../event-sink/event-sink.md); in practice, both are common. An Event Processor can be distributed, which means that it has multiple instances running across different machines. In this case, the processing of Events happens concurrently across these instances.
+我们构建一个事件处理器，这是一个读取[事件](../event/event.md)并处理它们的组件，可能作为其处理结果写入新事件。事件处理器可能作为[事件源](../event-source/event-source.md)和/或[事件接收器](../event-sink/event-sink.md)行动；在实践中，两者都很常见。事件处理器可以是分布式的，这意味着它在不同机器上有多个实例运行。在这种情况下，事件的处理在这些实例之间并发发生。
 
-An important characteristic of an Event Processor is that it should allow for composition with other Event Processors. In practice, we rarely use a single Event Processor in isolation. Instead, we compose and connect one or more Event Processors (via [Event Streams](../event-stream/event-stream.md)) inside an [Event Processing Application](event-processing-application.md) that fully implements one particular use case end-to-end, or that implements a subset of the overall business logic limited to the bounded context of a particular domain (for example, in a microservices architecture). 
+事件处理器的一个重要特征是它应该允许与其他事件处理器组合。在实践中，我们很少单独使用单个事件处理器。相反，我们在[事件处理应用程序](event-processing-application.md)中组合和连接一个或多个事件处理器（通过[事件流](../event-stream/event-stream.md)），该应用程序完全端到端地实现一个特定用例，或实现整体业务逻辑的一个子集，限于特定域的有界上下文（例如，在微服务架构中）。
 
-An Event Processor performs a specific task within the Event Processing Application. Think of the Event Processor as one processing node, or processing step, of a larger processing topology. Examples are the mapping of an event type to a domain object, filtering only the important events out of an [Event Stream](../event-stream/event-stream.md), enriching an event stream with additional data by joining it to another stream or database table, triggering alerts, or creating new events for consumption by other applications.
+事件处理器在事件处理应用程序中执行特定任务。将事件处理器视为更大处理拓扑中的一个处理节点或处理步骤。例子包括将事件类型映射到域对象、从[事件流](../event-stream/event-stream.md)中过滤出重要事件、通过将其连接到另一个流或数据库表来丰富事件流，触发警报，或创建供其他应用程序消费的新事件。
 
-## Implementation
+## 实现
 
-There are multiple ways to create an [Event Processing Application](../event-processing/event-processing-application.md) using Event Processors. We will look at two.
-
+有多种方法可以使用事件处理器创建[事件处理应用程序](../event-processing/event-processing-application.md)。我们将看两种。
 
 #### Apache Flink® SQL
 
-[Flink SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) provides a familiar standard SQL syntax for creating Event Processing Applications. Flink SQL parses SQL commands and constructs and manages the Event Processors that we define as part of an Event Processing Application.
+[Flink SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)为创建事件处理应用程序提供熟悉的标准SQL语法。Flink SQL解析SQL命令并构建和管理我们定义为事件处理应用程序一部分的事件处理器。
 
-In the following example, we create a Flink SQL query that reads data from the `readings` Event Stream and "cleans" the Event values. The query publishes the clean readings to a new table called `clean_readings`. Here, this query acts as an Event Processing Application comprising multiple interconnected Event Processors.
+在以下示例中，我们创建一个Flink SQL查询，从`readings`事件流读取数据并"清理"事件值。查询将清理的读数发布到名为`clean_readings`的新表。在这里，此查询作为包含多个互连事件处理器的事件处理应用程序。
 
 ```sql
 CREATE TABLE clean_readings AS
@@ -37,15 +36,14 @@ CREATE TABLE clean_readings AS
     FROM readings;
 ```
 
-With Flink SQL, we can view each section of the command as the construction of a different Event Processor:
+使用Flink SQL，我们可以将命令的每个部分视为不同事件处理器的构建：
 
-* `CREATE TABLE` defines the new output [Event Stream](../event-stream/event-stream.md) to which this application will produce Events.
-* `SELECT ...` is a mapping function, taking each input Event and "cleaning" it as defined. In this example, cleaning simply means uppercasing the `location` field in each input reading.
-* `FROM ...` is a source Event Processor that defines the input Event Stream for the overall application.
-
+* `CREATE TABLE`定义此应用程序将生产事件的新输出[事件流](../event-stream/event-stream.md)。
+* `SELECT ...`是一个映射函数，接受每个输入事件并按定义"清理"它。在此示例中，清理只是意味着将每个输入读数中的`location`字段大写。
+* `FROM ...`是一个源事件处理器，定义整个应用程序的输入事件流。
 
 #### Kafka Streams
-The [Kafka Streams DSL](https://docs.confluent.io/platform/current/streams/developer-guide/dsl-api.html) provides abstractions for [Event Streams](../event-stream/event-stream.md) and [Tables](../table/state-table.md), as well as stateful and stateless transformation functions (`map`, `filter`, and others). Each of these functions can act as an Event Processor in the larger [Event Processing Application](../event-processing/event-processing-application.md) that we build with the Kafka Streams library.
+[Kafka Streams DSL](https://docs.confluent.io/platform/current/streams/developer-guide/dsl-api.html)为[事件流](../event-stream/event-stream.md)和[表](../table/state-table.md)提供抽象，以及有状态和无状态转换函数（`map`、`filter`等）。这些函数中的每一个都可以作为我们用Kafka Streams库构建的更大[事件处理应用程序](../event-processing/event-processing-application.md)中的事件处理器。
 
 ```java
 builder
@@ -55,17 +53,17 @@ builder
   .to("clean");
 ```
 
-In the above example, we use the [Kafka Streams `StreamsBuilder`](https://kafka.apache.org/38/javadoc/org/apache/kafka/streams/StreamsBuilder.html) to construct the stream processing topology. 
+在上面的示例中，我们使用[Kafka Streams `StreamsBuilder`](https://kafka.apache.org/38/javadoc/org/apache/kafka/streams/StreamsBuilder.html)构建流处理拓扑。
 
-* First, we create an input stream, using the `stream` function. This creates an Event Stream from the designated Apache Kafka® topic.
-* Next, we transform the Events, using the `mapValues` function. This function accepts an Event and returns a new Event with any desired transformations to the original Event's values.
-* Finally, we write the transformed Events to a destination Kafka topic, using the `to` function. This function terminates our stream processing topology.
+* 首先，我们使用`stream`函数创建输入流。这从指定的Apache Kafka®主题创建事件流。
+* 接下来，我们使用`mapValues`函数转换事件。此函数接受一个事件并返回一个新事件，对原始事件的值进行任何所需的转换。
+* 最后，我们使用`to`函数将转换后的事件写入目标Kafka主题。此函数终止我们的流处理拓扑。
 
-## Considerations
+## 注意事项
 
-* While it could be tempting to build a "multi-purpose" Event Processor, it's important to design processors in a composable way. By building processors as discrete units, it is easier to reason about what each processor does, and by extension, what the Event Processing Application does. 
+* 虽然构建"多用途"事件处理器可能很诱人，但以可组合的方式设计处理器很重要。通过将处理器构建为离散单元，更容易推理每个处理器做什么，进而推理事件处理应用程序做什么。
 
-## References
-* See the [Event Processing Application](../event-processing/event-processor.md) pattern. Event Processing Applications are composed of Event Processors.
-* In [Kafka Streams](https://kafka.apache.org/38/documentation/streams/core-concepts#streams_topology), a processor is a node in the processor topology, representing a step to transform Events.
-* The blog post [Intro to Apache Kafka: How Kafka Works](https://www.confluent.io/blog/apache-kafka-intro-how-kafka-works/) provides details about the core Kafka concepts, such as Events and topics.
+## 参考资料
+* 参见[事件处理应用程序](../event-processing/event-processor.md)模式。事件处理应用程序由事件处理器组成。
+* 在[Kafka Streams](https://kafka.apache.org/38/documentation/streams/core-concepts#streams_topology)中，处理器是处理器拓扑中的一个节点，代表转换事件的步骤。
+* 博客文章[Apache Kafka介绍：Kafka如何工作](https://www.confluent.io/blog/apache-kafka-intro-how-kafka-works/)提供了关于核心Kafka概念的详细信息，如事件和主题。

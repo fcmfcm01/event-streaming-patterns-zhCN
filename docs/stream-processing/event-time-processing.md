@@ -1,36 +1,36 @@
 ---
 seo:
-  title: Event-Time Processing
-  description: Event-Time Processing allows an Event Streaming Application to process an Event with the timestamp of when the Event originally occurred. 
+  title: 事件时间处理
+  description: 事件时间处理允许事件流应用程序使用事件最初发生的时间戳来处理事件。
 ---
 
-# Event-Time Processing
+# 事件时间处理
 
-Consistent time semantics are of particular importance in stream processing. Many operations in an [Event Processor](../event-processing/event-processor.md) are dependent on time, such as joins, aggregations when computed over a window of time (for example, five-minute averages), and handling out-of-order and "late" data. In many systems, developers have a choice between different variants of time for an Event: 
+一致的时间语义在流处理中特别重要。[事件处理器](../event-processing/event-processor.md)中的许多操作都依赖于时间，如连接、在时间窗口上计算的聚合（例如，五分钟平均值）以及处理乱序和"延迟"数据。在许多系统中，开发人员可以为事件选择不同的时间变体：
 
-1. Event-time, which captures the time at which an Event was originally created by its [Event Source](../event-source/event-source.md).
-2. Ingestion-time, which captures the time at which an Event was received on the Event Stream in an [Event Streaming Platform](../event-processing/event-processing-application.md).
-3. Wall-clock-time or processing-time, which is the time at which a downstream [Event Processor](../event-processing/event-processor.md) happens to process the Event (potentially milliseconds, hours, months, or more after event-time).
+1. 事件时间，捕获[事件源](../event-source/event-source.md)最初创建事件的时间。
+2. 摄取时间，捕获[事件流平台](../event-processing/event-processing-application.md)中事件流接收事件的时间。
+3. 挂钟时间或处理时间，下游[事件处理器](../event-processing/event-processor.md)处理事件的时间（可能在事件时间后几毫秒、几小时、几个月或更长时间）。
 
-Depending on the use case, developers need to pick one variant over the others.
+根据用例，开发人员需要选择一种变体而不是其他变体。
 
-## Problem
+## 问题
 
-How can we implement event-time based processing of Events (i.e., processing based on each Event's original timeline)?
+我们如何实现基于事件时间的事件处理（即基于每个事件原始时间线的处理）？
 
-## Solution
+## 解决方案
 
 ![event-time-processing](../img/event-time-processing.svg)
 
-For event-time processing, the [Event Source](../event-source/event-source.md) must include a timestamp in each Event (for example, in a data field or in header metadata) that denotes the time at which the Event was created by the Event Source. Then, on the consuming side, the [Event Processing Application](../event-processing/event-processing-application.md) needs to extract this timestamp from the Event. This allows the application to process Events based on their original timeline.
+对于事件时间处理，[事件源](../event-source/event-source.md)必须在每个事件中包含时间戳（例如，在数据字段或头元数据中），表示事件源创建事件的时间。然后，在消费端，[事件处理应用程序](../event-processing/event-processing-application.md)需要从事件中提取此时间戳。这允许应用程序基于其原始时间线处理事件。
 
-## Implementation
+## 实现
 
 ### Apache Flink®
 
-In Flink, streaming applications based on [event-time processing](https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/) require that event time watermarks be specified. Watermarks are used to signal and track the passage of time and can be used to implement grace periods for handling or dropping late events.
+在Flink中，基于[事件时间处理](https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/)的流应用程序需要指定事件时间水印。水印用于信号和跟踪时间的流逝，可用于实现处理或丢弃延迟事件的宽限期。
 
-For example, the following Flink SQL table definition defines a [watermark strategy](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/create/#watermark) so that the watermarks emitted are the maximum observed event timestamp minus 30 seconds. This delayed watermark strategy effectively allows events to be up to 30 seconds later than events seen so far.
+例如，以下Flink SQL表定义定义了[水印策略](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/create/#watermark)，使得发出的水印是最大观察事件时间戳减去30秒。这种延迟水印策略有效地允许事件比迄今为止看到的事件晚30秒。
 
 ```sql
 CREATE TABLE orders (
@@ -43,9 +43,9 @@ CREATE TABLE orders (
 
 ### Kafka Streams
 
-The Kafka Streams client library of Apache Kafka provides a `TimestampExtractor` interface for extracting the timestamp from Events. The default implementation retrieves the timestamp from the Kafka message (see the discussion above) as set by the producer of the message. Normally, this setup results in event-time processing, which is what we want.
+Apache Kafka的Kafka Streams客户端库提供了`TimestampExtractor`接口来从事件中提取时间戳。默认实现从Kafka消息中检索时间戳（参见上面的讨论），如消息生产者设置的那样。通常，这种设置会产生事件时间处理，这正是我们想要的。
 
-But for those cases where we need to get the timestamp from the event payload, we can create our own `TimestampExtractor` implementation:
+但对于那些需要从事件负载中获取时间戳的情况，我们可以创建自己的`TimestampExtractor`实现：
 
 ```java
 class OrderTimestampExtractor implements TimestampExtractor {
@@ -54,20 +54,20 @@ public long extract(ConsumerRecord<Object, Object> record, long partitionTime) {
     ElectronicOrder order = (ElectronicOrder)record.value();
     return order.getTime();
 }
-
 ```
 
-Generally speaking, this functionality of custom timestamp assignment makes it easy to integrate data from other applications that are not using Kafka Streams.
+一般来说，这种自定义时间戳分配功能使得集成来自不使用Kafka Streams的其他应用程序的数据变得容易。
 
-Additionally, Kafka has the notion of event-time vs. processing-time (wall-clock-time) vs. ingestion time. Clients such as Kafka Streams make it possible to select which variant of time we want to work with in our application.
+此外，Kafka有事件时间与处理时间（挂钟时间）与摄取时间的概念。像Kafka Streams这样的客户端使得在我们的应用程序中选择我们想要使用的时间变体成为可能。
 
-## Considerations
+## 注意事项
 
-When deciding which time semantics to use, we need to consider the problem domain. In most cases, event-time processing is the recommended option. For example, when re-processing historical Event Streams (such as for A/B testing, for training machine learning models), only event-time processing yields correct results. If we use processing-time (wall-clock time) to process the last four weeks' worth of Events, then an [Event Processor](../event-processing/event-processor.md) will falsely believe that these four weeks of data were created just now in a matter of minutes, which completely breaks the original timeline and temporal distribution of the data and thus leads to incorrect processing results.
+在决定使用哪种时间语义时，我们需要考虑问题域。在大多数情况下，事件时间处理是推荐的选项。例如，当重新处理历史事件流（如用于A/B测试、训练机器学习模型）时，只有事件时间处理产生正确的结果。如果我们使用处理时间（挂钟时间）来处理过去四周的事件，那么[事件处理器](../event-processing/event-processor.md)会错误地认为这四周的数据刚刚在几分钟内创建，这完全破坏了原始时间线和数据的时间分布，从而导致不正确的处理结果。
 
-The difference between event-time and ingestion-time is typically less pronounced, but ingestion-time still suffers from the same conceptual discrepancy between when an Event actually occurred in the real world (event-time) vs. when the Event was received and stored in the [Event Streaming Platform](../event-processing/event-processing-application.md) (ingestion-time). If, for some reason, there is a significant delay between when an Event is captured and when it is delivered to the Event Streaming Platform, then event-time is the better option.
+事件时间和摄取时间之间的差异通常不太明显，但摄取时间仍然遭受事件在现实世界中实际发生的时间（事件时间）与事件在[事件流平台](../event-processing/event-processing-application.md)中被接收和存储的时间（摄取时间）之间的相同概念差异。如果由于某种原因，事件被捕获和交付到事件流平台之间存在显著延迟，那么事件时间是更好的选项。
 
-One reason not to use event-time is if we cannot trust the [Event Source](../event-source/event-source.md) to provide us with reliable data, including reliable embedded timestamps for Events. In this case, ingestion-time may be the preferred option, if it is not feasible to fix the root cause (unreliable Event sources).
+不使用事件时间的一个原因是我们不能信任[事件源](../event-source/event-source.md)为我们提供可靠的数据，包括事件的可靠嵌入时间戳。在这种情况下，如果修复根本原因（不可靠的事件源）不可行，摄取时间可能是首选选项。
 
-## References
-* See also the [Wall-Clock-Time Processing](../stream-processing/wallclock-time.md) pattern, which provides further details about using current time (wall-clock time) as the event time.
+## 参考资料
+
+* 另请参阅[挂钟时间处理](../stream-processing/wallclock-time.md)模式，它提供了关于使用当前时间（挂钟时间）作为事件时间的更多详细信息。

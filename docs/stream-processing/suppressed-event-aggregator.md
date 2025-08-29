@@ -1,44 +1,45 @@
 ---
 seo:
-  title: Suppressed Event Aggregator
-  description: Suppressed Event Aggregator is an aggregator which only provides a final aggregation result, rather than including "intermediate" results
+  title: 抑制事件聚合器
+  description: 抑制事件聚合器是只提供最终聚合结果而不包括"中间"结果的聚合器
 ---
-# Suppressed Event Aggregator
-An [Event Streaming Application](../event-processing/event-processing-application.md) can perform continuous aggregation operations like an [Event Aggregator](event-aggregator.md).  Normally, however, the aggregator will emit "intermediate" processing results. That's because an event stream is potentially infinite, so generally we do not know when the input is considered "complete". So, with few exceptions, there's not really a point where we can have a "final" result. Also, this emit strategy has the benefit of resulting in low latency between the time when a new input event is received and the time when updated processing results are available.
 
-In certain situations, however, a single, final result is what we prefer to receive, rather than multiple intermediate results. For example, when we have to feed aggregation results into a system that is natively not compatible with a streaming approach. Here, we need an aggregator that is able to "suppress" intermediate results so that only a single, final result is being produced.
+# 抑制事件聚合器
 
+[事件流应用程序](../event-processing/event-processing-application.md)可以执行像[事件聚合器](event-aggregator.md)一样的连续聚合操作。但是，通常聚合器会发出"中间"处理结果。这是因为事件流可能是无限的，所以我们通常不知道何时输入被认为是"完整的"。因此，除了少数例外，我们真的没有一个可以获得"最终"结果的点。此外，这种发出策略的好处是在接收到新输入事件和可用更新处理结果之间产生低延迟。
 
-## Problem
-How can an event aggregator provide a final aggregation result, rather than "intermediate" results that keep being updated?
+然而，在某些情况下，我们更愿意接收单一的最终结果，而不是多个中间结果。例如，当我们必须将聚合结果输入到本质上与流式方法不兼容的系统中时。在这里，我们需要一个能够"抑制"中间结果的聚合器，以便只产生单一的最终结果。
 
-## Solution
+## 问题
+
+事件聚合器如何提供最终聚合结果，而不是不断更新的"中间"结果？
+
+## 解决方案
 ![suppressed-event-aggregator](../img/suppressed-event-aggregator.svg)
 
-Generally speaking, this is possible only for windowed aggregations. That's because, in this case, the aggregator does know when the input for a given window (e.g., a 5-minute window in order to compute 5-minute averages) is considered complete, and thus it can be configured to suppress "intermediate" results until the window time passes. How do we do this?
+一般来说，这只对窗口聚合是可能的。这是因为，在这种情况下，聚合器确实知道给定窗口的输入（例如，计算5分钟平均值的5分钟窗口）何时被认为是完整的，因此可以配置为抑制"中间"结果，直到窗口时间过去。我们如何做到这一点？
 
-First, the input events of the aggregator must be windowed via an [Event Grouper](../stream-processing/event-grouper.md), i.e., the events are being grouped into "windows" based on their timestamps. Depending on the configured grouping, an event is placed exclusively into a single window, or it can be placed into multiple windows.
-Then, the event aggregator performs its operation on each window.
+首先，聚合器的输入事件必须通过[事件分组器](../stream-processing/event-grouper.md)进行窗口化，即事件根据其时间戳被分组到"窗口"中。根据配置的分组，事件可以专门放置到单个窗口中，或者可以放置到多个窗口中。
+然后，事件聚合器对每个窗口执行其操作。
 
-Only once the window is considered to have "passed" (e.g., a 5-minute window starting at 09:00am and ending at 09:05am) will the aggregator output a single, final result for this window. For example, consider an aggregation for an event stream of customer payments, where we want to compute the number of payments per hour.  By using a window size of 1 hour, we can emit a final count for the hourly number of payments once the respective 1-hour window closes.
+只有当窗口被认为已经"过去"（例如，从上午9:00开始到上午9:05结束的5分钟窗口）时，聚合器才会为该窗口输出单一的最终结果。例如，考虑客户支付事件流的聚合，我们希望计算每小时的支付数量。通过使用1小时的窗口大小，一旦相应的1小时窗口关闭，我们就可以发出每小时支付数量的最终计数。
 
-Ideally, the aggregator is able to handle out-of-order or "late" events, which is a common situation to deal with in an event streaming platform (e.g., an event created at 09:03 arrives only at 09:07). Here, a common technique is to let users define a so-called _grace period_ for windows to give delayed events some extra time to arrive. Events that arrive within the grace period of a window will be processed, whereas any later events will be not be processed (e.g., if the grace period is 3 minutes, then the 09:03 event arriving at 09:07 would be included in the 09:00-09:05 window; any events arriving at or after 09:08 would be ignored by this window). 
+理想情况下，聚合器能够处理乱序或"延迟"事件，这是事件流平台中需要处理的常见情况（例如，在9:03创建的事件只在9:07到达）。在这里，一种常见的技术是让用户为窗口定义所谓的_宽限期_，给延迟事件一些额外的时间到达。在窗口宽限期内到达的事件将被处理，而任何更晚的事件将不被处理（例如，如果宽限期是3分钟，那么9:07到达的9:03事件将包含在9:00-9:05窗口中；任何在9:08或之后到达的事件将被此窗口忽略）。
 
-Note that the use of a grace period increases the processing latency, because the aggregator has to wait for an additional period of time before it knows the input for a given window is complete and thus before it can output the single, final result for that window.
+请注意，使用宽限期会增加处理延迟，因为聚合器必须等待额外的时间段才能知道给定窗口的输入是完整的，因此才能为该窗口输出单一的最终结果。
 
+## 实现
 
-## Implementation
+对于Apache Kafka®，[Kafka Streams客户端库](https://docs.confluent.io/platform/current/streams/index.html)在其DSL中提供了`suppress`操作符，我们可以将其应用于窗口聚合。
 
-For Apache Kafka®, the [Kafka Streams client library](https://docs.confluent.io/platform/current/streams/index.html) provides a `suppress` operator in its DSL, which we can apply to windowed aggregations.
-
-In the following example we compute hourly aggregations on a stream of orders, using a grace period of five minutes to wait for any orders arriving with a slight delay. The `suppress` operator ensures that there's only a single result event for each hourly window.
+在以下示例中，我们在订单流上计算每小时聚合，使用5分钟的宽限期等待任何稍微延迟到达的订单。`suppress`操作符确保每个小时窗口只有一个结果事件。
 
 ```java
 KStream<String, OrderEvent> orderStream = builder.stream(...);
 
  orderStream.groupByKey()
             .windowedBy(TimeWindows.of(Duration.ofHours(1)).grace(Duration.ofMinutes(5)))
-            .aggregate(() -> 0.0 /* initial value of `total`, per window */,
+            .aggregate(() -> 0.0 /* 每个窗口`total`的初始值 */,
                        (key, order, total) -> total + order.getPrice(),
                        Materialized.with(Serdes.String(), Serdes.Double()))
             .suppress(untilWindowCloses(unbounded()))
@@ -47,7 +48,6 @@ KStream<String, OrderEvent> orderStream = builder.stream(...);
             .to(outputTopic, Produced.with(Serdes.String(), Serdes.Double()));
 ```
 
+## 注意事项
 
-## Considerations
-
-* To honor the contract of outputting only a single result per window, the suppressed aggregator typically buffers events in some way until the window closes.  If its implementation uses an in-memory buffer, then, depending on the number of events per window and their payload sizes, there's the risk to run into out-of-memory errors.
+* 为了遵守每个窗口只输出单一结果的约定，抑制聚合器通常以某种方式缓冲事件，直到窗口关闭。如果其实现使用内存缓冲区，那么根据每个窗口的事件数量及其负载大小，存在遇到内存不足错误的风险。

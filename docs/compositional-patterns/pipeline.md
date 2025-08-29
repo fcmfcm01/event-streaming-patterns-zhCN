@@ -1,27 +1,27 @@
 ---
 seo:
-  title: Pipeline
-  description: Perform a complex operation on a series of events, in an event stream or table, through a series of independent processing stages.
+  title: 管道
+  description: 通过一系列独立的处理阶段对事件流或表中的一系列事件执行复杂操作。
 ---
 
-# Pipeline
+# 管道
 
-A single [Event Stream](../event-stream/event-stream.md) or [Table](../table/state-table.md) can be used by multiple [Event Processing Applications](../event-processing/event-processing-application.md), and its [Events](../event/event.md) may go through multiple processing stages along the way (e.g., filters, transformations, joins, aggregations) to implement more complex use cases.
+单个[事件流](../event-stream/event-stream.md)或[表](../table/state-table.md)可以被多个[事件处理应用程序](../event-processing/event-processing-application.md)使用，其[事件](../event/event.md)可能在此过程中经过多个处理阶段（例如，过滤器、转换、连接、聚合）来实现更复杂的用例。
 
-## Problem
+## 问题
 
-How can a single processing objective for a set of Event Streams and/or Tables be achieved through a series of independent processing stages?
+如何通过一系列独立的处理阶段来实现事件流和/或表的单个处理目标？
 
-## Solution
+## 解决方案
 ![pipeline](../img/pipeline.svg)
 
-We can compose [Event Streams](../event-stream/event-stream.md) and [Tables](../table/state-table.md) in an [Event Streaming Platform](../event-stream/event-streaming-platform.md) via an [Event Processing Application](../event-processing/event-processing-application.md) to a create a pipeline—also called a topology—of [Event Processors](../event-processing/event-processor.md), which continuously process the events flowing through them. Here, the output of one processor is the input for one or more downstream processors. Pipelines, notably when created for use cases such as Streaming [ETL](https://en.wikipedia.org/wiki/Extract,_transform,_load), may include [Event Source Connectors](../event-source/event-source-connector.md) and [Event Sink Connectors](../event-sink/event-sink-connector.md), which continuously import and export data as streams from/to external services and systems, respectively. Connectors are particularly useful for turning data at rest in such systems into data in motion.
+我们可以通过[事件处理应用程序](../event-processing/event-processing-application.md)在[事件流平台](../event-stream/event-streaming-platform.md)中组合[事件流](../event-stream/event-stream.md)和[表](../table/state-table.md)，创建[事件处理器](../event-processing/event-processor.md)的管道——也称为拓扑——持续处理流经它们的事件。在这里，一个处理器的输出是一个或多个下游处理器的输入。管道，特别是为流式[ETL](https://en.wikipedia.org/wiki/Extract,_transform,_load)等用例创建的管道，可能包括[事件源连接器](../event-source/event-source-connector.md)和[事件接收器连接器](../event-sink/event-sink-connector.md)，它们分别持续从/向外部服务和系统导入和导出数据作为流。连接器对于将此类系统中的静态数据转换为动态数据特别有用。
 
-Taking a step back, we can see that pipelines in an Event Streaming Platform help companies build a "central nervous system" for data in motion.
+退一步说，我们可以看到事件流平台中的管道帮助公司为动态数据构建"中央神经系统"。
 
-## Implementation
+## 实现
 
-As an example we can use [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) to run a stream of events through a series of processing stages, thus creating a Pipeline that continuously processes data in motion.
+作为示例，我们可以使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)通过一系列处理阶段运行事件流，从而创建一个持续处理动态数据的管道。
 
 ```sql
 CREATE TABLE orders ( 
@@ -32,7 +32,7 @@ CREATE TABLE orders (
 );
 ```
 
-We'll also create a (continuously updated) customers table that will contain the latest profile information about each customer, such as their current home address.
+我们还将创建一个（持续更新的）客户表，其中包含每个客户的最新配置文件信息，例如他们当前的家庭地址。
 
 ```sql
 CREATE TABLE customers (
@@ -42,7 +42,7 @@ CREATE TABLE customers (
 );
 ```
 
-Next, we create a new stream by joining the orders stream with our customer table:
+接下来，我们通过将订单流与我们的客户表连接来创建新流：
 
 ```sql
 CREATE TABLE orders_enriched AS
@@ -52,7 +52,7 @@ CREATE TABLE orders_enriched AS
   ON o.customer_id = c.customer_id;
 ```
 
-Next, we create a stream, where we add the order total to each order by aggregating the price of the individual items in the order:
+接下来，我们创建一个流，通过聚合订单中单个项目的价格来为每个订单添加订单总额：
 
 ```sql
 CREATE TABLE orders_with_totals AS
@@ -61,9 +61,11 @@ CREATE TABLE orders_with_totals AS
   GROUP BY cust_id, order_id;
 ```
 
-## Considerations
-* The same event stream or table can participate in multiple pipelines. Because streams and tables are stored durably, applications have a lot of flexibility how and when they process the respective data, and they can do so independently from each other.
-* The various processing stages in a pipeline create their own derived streams/tables (such as the `orders_enriched` table in the Flink SQL example above), which in turn can be used as input for other pipelines and applications. This allows for further and more complex composition and re-use of events throughout an organization.
+## 注意事项
 
-## References
-This pattern was influenced by [Pipes and Filters](https://www.enterpriseintegrationpatterns.com/patterns/messaging/PipesAndFilters.html) in Enterprise Integration Patterns by Gregor Hohpe and Bobby Woolf. However, it is much more powerful and flexible because it is using [Event Streams](../event-stream/event-stream.md) as the pipes.
+* 同一事件流或表可以参与多个管道。因为流和表是持久存储的，应用程序在处理相应数据的方式和时间上有很大的灵活性，并且它们可以相互独立地这样做。
+* 管道中的各种处理阶段创建自己的派生流/表（如上面Flink SQL示例中的`orders_enriched`表），这些流/表又可以作为其他管道和应用程序的输入。这允许在整个组织中对事件进行进一步和更复杂的组合和重用。
+
+## 参考资料
+
+此模式受到Gregor Hohpe和Bobby Woolf的《企业集成模式》中[管道和过滤器](https://www.enterpriseintegrationpatterns.com/patterns/messaging/PipesAndFilters.html)的影响。但是，它更强大和灵活，因为它使用[事件流](../event-stream/event-stream.md)作为管道。

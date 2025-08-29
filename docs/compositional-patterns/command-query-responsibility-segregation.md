@@ -1,34 +1,38 @@
 ---
 seo:
-  title: Command Query Responsibility Segregation
-  description: Command Query Responsibility Segregation (CQRS) describes segmentation of models for updating and querying of data.
+  title: 命令查询职责分离
+  description: 命令查询职责分离（CQRS）描述了数据更新和查询模型的分离。
 ---
 
-# Command Query Responsibility Segregation (CQRS)
-Databases conflate the writing of data and the reading of data in the same place: the database. In some situations, it is preferable to separate reads from writes. There are several reasons to do this but the most prevalent is that the application can now save data in the exact form in which it arrives, accurately reflecting what happened in the real world, while reading it in a different form, one that is optimized for reading. 
+# 命令查询职责分离 (CQRS)
 
-For example, a user adding and removing items from their cart would all be recorded as a stream of immutable events: t-shirt added, t-shirt removed, etc. These are then summarized into a separate view that serves reads, for example summarizing the various user events to represent the accurate contents of the cart. 
+数据库将数据的写入和读取混合在同一个地方：数据库。在某些情况下，最好将读取与写入分离。这样做有几个原因，但最主要的原因是应用程序现在可以以数据到达的确切形式保存数据，准确反映现实世界中发生的事情，同时以不同的形式读取数据，这种形式针对读取进行了优化。
 
-## Problem
-How can we store and hold data in the exact form in which it arrived but read from a summarized and curated view?
+例如，用户向购物车添加和移除商品的所有操作都将被记录为不可变事件的流：添加T恤、移除T恤等。然后将这些事件汇总到一个单独的服务于读取的视图中，例如汇总各种用户事件以表示购物车的准确内容。
 
-## Solution
+## 问题
+
+我们如何以数据到达的确切形式存储和保存数据，但从汇总和策划的视图中读取？
+
+## 解决方案
 ![command-query-responsibility-segregation](../img/command-query-responsibility-segregation.svg)
 
-Represent changes that happen in the real world as [Events](../event/event.md) - an order is shipped, a ride is accepted, etc. - and retain these events as the system of record. Subsequently, aggregate those [Events](../event/event.md) into a view that summarizes the events to represent the current state, allowing applications to query the current values. 
-So for example, the current balance of an account would be the total of all the payment events that added money to or removed it from the account. The system of record is the stream of payment events. The view we read from would be the account balance. 
+将现实世界中发生的变化表示为[事件](../event/event.md)——订单已发货、行程已接受等——并将这些事件保留为记录系统。随后，将这些[事件](../event/event.md)聚合到一个视图中，该视图汇总事件以表示当前状态，允许应用程序查询当前值。
 
-## Implementation
+例如，账户的当前余额将是所有向账户添加或移除资金的支付事件的总和。记录系统是支付事件流。我们从中读取的视图将是账户余额。
 
-As an example implementation, you can implement CQRS in [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) using an [Event Stream](../event-stream/event-stream.md) and [Table](../table/state-table.md).
+## 实现
 
-Creating a new Event Stream is straightforward:
+作为示例实现，您可以使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)在[事件流](../event-stream/event-stream.md)和[表](../table/state-table.md)中实现CQRS。
+
+创建新的事件流很简单：
 
 ```sql
 CREATE TABLE purchases (customer VARCHAR NOT NULL, item VARCHAR NOT NULL, qty INT);
 ```
 
-[Events](../event/event.md) can be directly inserted using familiar SQL syntax. 
+可以使用熟悉的SQL语法直接插入[事件](../event/event.md)。
+
 ```sql
 INSERT INTO purchases (customer, item, qty) VALUES
   ('jsmith', 'hats', 1),
@@ -39,7 +43,8 @@ INSERT INTO purchases (customer, item, qty) VALUES
   ('jsmith', 'pants', -1);
 ```
 
-We can create a summarized view of the data as a [Table](../table/state-table.md):
+我们可以创建一个数据的汇总视图作为[表](../table/state-table.md)：
+
 ```sql  
 CREATE TABLE customer_purchases AS
   SELECT customer, item, SUM(qty) AS total_qty
@@ -47,19 +52,22 @@ CREATE TABLE customer_purchases AS
   GROUP BY customer, item;
 ```
 
-And continuously query for changes to the state of the `customer_purchases` table:
+并持续查询`customer_purchases`表状态的变化：
+
 ```sql 
 SELECT * FROM customer_purchases;
 ```
 
-## Considerations
-* CQRS adds complexity over a traditional simple [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) database implementation.
+## 注意事项
 
-* High performance applications may benefit from a CQRS design. Isolating the load of writing and reading of data may allow us to scale those aspects independently and properly. 
+* CQRS比传统的简单[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete)数据库实现增加了复杂性。
 
-* Microservices applications often use CQRS to scale-out with many views provided for different services. The same pattern is applicable to geographically dispersed applications such as a flight booking system which are read heavy across many locations.
+* 高性能应用程序可能受益于CQRS设计。隔离数据写入和读取的负载可能允许我们独立且适当地扩展这些方面。
 
-* A write to a CQRS system is eventually consistent. Writes cannot be read immediately as there is a delay between the write of the command [Event](../event/event.md) and the query-model being updated. This can cause complexity for some client applications, particularly online services.
+* 微服务应用程序通常使用CQRS来扩展，为不同服务提供许多视图。相同的模式适用于地理分散的应用程序，如航班预订系统，这些系统在多个位置都是读取密集型的。
 
-## References
-* See Martin Fowler's [detailed explanation of CQRS](https://martinfowler.com/bliki/CQRS.html) for more information.
+* 对CQRS系统的写入最终是一致的。写入不能立即读取，因为命令[事件](../event/event.md)的写入和查询模型的更新之间存在延迟。这可能为某些客户端应用程序带来复杂性，特别是在线服务。
+
+## 参考资料
+
+* 有关更多信息，请参阅Martin Fowler的[CQRS详细解释](https://martinfowler.com/bliki/CQRS.html)。

@@ -1,57 +1,64 @@
 ---
 seo:
-  title: Event Streaming Platform
-  description: An Event Streaming Platform, such as Apache Kafka®, allows businesses to design processes and applications around Event Streams.
+  title: 事件流平台
+  description: 事件流平台，如Apache Kafka®，允许企业围绕事件流设计流程和应用程序。
 ---
 
-# Event Streaming Platform
-Companies are rarely built on a single data store and a single application to interact with it. Typically, a company may have hundreds or thousands of applications, databases, data warehouses, or other data stores. The company's data is spread across these resources, and the interconnection between them is immensely complicated. In larger enterprises, multiple lines of business can complicate the situation even further. Modern software architectures, such as microservices and SaaS applications, also add complexity, as engineers are tasked with weaving the entire infrastructure together cohesively.
+# 事件流平台
 
-Furthermore, companies can no longer survive without reacting to [Events](../event/event.md) within their business in real time. Customers and business partners expect immediate reactions and rich interactive applications. Today, data is in motion, and engineering teams need to model applications to process business requirements as streams of events, not as data at rest, sitting idly in a traditional data store.
+公司很少建立在单一数据存储和与之交互的单一应用程序上。通常，公司可能有数百或数千个应用程序、数据库、数据仓库或其他数据存储。公司的数据分布在这些资源中，它们之间的互连极其复杂。在大型企业中，多条业务线可能使情况更加复杂。现代软件架构，如微服务和SaaS应用程序，也增加了复杂性，因为工程师的任务是将整个基础设施紧密地编织在一起。
 
-## Problem
-What architecture can we use to model everything within our business as streams of events, creating a modern, fault-tolerant, and scalable platform for building modern applications?
+此外，公司无法在不实时响应其业务中的[事件](../event/event.md)的情况下生存。客户和业务合作伙伴期望即时反应和丰富的交互式应用程序。今天，数据在运动中，工程团队需要建模应用程序以将业务需求作为事件流处理，而不是作为静态数据，闲置在传统数据存储中。
 
-## Solution
+## 问题
+
+我们可以使用什么架构来将业务中的一切都建模为事件流，为构建现代应用程序创建一个现代、容错和可扩展的平台？
+
+## 解决方案
 ![event streaming platform](../img/event-streaming-platform.svg)
 
-We can design business processes and applications around [Event Streams](../event-stream/event-stream.md). Everything, from sales, orders, trades, and customer experiences to sensor readings and database updates, is modeled as an [Event](../event/event.md). Events are written to the Event Streaming Platform once, allowing distributed functions within the business to react in real time. Systems external to the Event Streaming Platform are integrated using [Event Sources](../event-source/event-source.md) and [Event Sinks](../event-sink/event-sink.md). Business logic is built within [Event Processing Applications](../event-processing/event-processing-application.md), which are composed of [Event Processors](../event-processing/event-processor.md) that read events from and write events to Event Streams.
+我们可以围绕[事件流](../event-stream/event-stream.md)设计业务流程和应用程序。从销售、订单、交易和客户体验到传感器读数和数据库更新，一切都建模为[事件](../event/event.md)。事件被写入事件流平台一次，允许业务中的分布式功能实时响应。事件流平台外部的系统使用[事件源](../event-source/event-source.md)和[事件接收器](../event-sink/event-sink.md)进行集成。业务逻辑在[事件处理应用程序](../event-processing/event-processing-application.md)中构建，这些应用程序由从事件流读取事件并向事件流写入事件的[事件处理器](../event-processing/event-processor.md)组成。
 
-## Implementation
+## 实现
 
-Apache Kafka® is the most popular Event Streaming Platform, designed to address the business requirements of a modern distributed architecture. You can use Kafka to read, write, process, query, and react to [Event Streams](../event-stream/event-stream.md) in a way that's horizontally scalable, fault-tolerant, and simple to use. Kafka is built upon many of the patterns described in [Event Streaming Patterns](../index.md).
+Apache Kafka®是最流行的事件流平台，旨在满足现代分布式架构的业务需求。您可以使用Kafka以水平可扩展、容错且易于使用的方式读取、写入、处理、查询和响应[事件流](../event-stream/event-stream.md)。Kafka建立在[事件流模式](../index.md)中描述的许多模式之上。
 
-### Fundamentals
-Data in Kafka is exchanged as events, which represent facts about something that has occurred. Examples of events include orders, payments, activities, and measurements. In Kafka, events are sometimes also referred to as _records_ or _messages_, and they contain data and metadata describing the event.
+### 基础
 
-Events are written to, stored in, and read from [Event Streams](../event-stream/event-stream.md). In Kafka, these streams are called _topics_. Topics have names and generally contain "related" records of a particular use case, such as customer payments. Topics are modeled as durable, distributed, append-only logs in the [Event Store](../event-storage/event-store.md). For more details about Kafka topics, see the [Apache Kafka 101 course](/learn-kafka/apache-kafka/events/).
+Kafka中的数据作为事件交换，事件表示已发生事情的真相。事件的示例包括订单、支付、活动和测量。在Kafka中，事件有时也被称为_记录_或_消息_，它们包含描述事件的数据和元数据。
 
-Applications that write events to topics are called [Producers](https://docs.confluent.io/platform/current/clients/producer.html). Producers come in many forms and represent the [Event Source](../event-source/event-source.md) pattern. Reading events is performed by [Consumers](https://docs.confluent.io/platform/current/clients/consumer.html), which represent [Event Sinks](../event-sink/event-sink.md). Consumers typically operate in a distributed, coordinated fashion to increase scale and fault tolerance. [Event Processing Applications](../event-processing/event-processing-application.md) act as both event sources and event sinks. 
+事件被写入、存储在[事件流](../event-stream/event-stream.md)中并从其中读取。在Kafka中，这些流被称为_主题_。主题有名称，通常包含特定用例的"相关"记录，如客户支付。主题在[事件存储](../event-storage/event-store.md)中被建模为持久、分布式、仅追加的日志。有关Kafka主题的更多详细信息，请参阅[Apache Kafka 101课程](/learn-kafka/apache-kafka/events/)。
 
-Applications which produce and consume events as described above are referred to as "clients." These client applications can be authored in a variety of programming languages, including [Java](/get-started/java), [Go](/get-started/go), [C/C++](/get-started/c), [C# (.NET)](/get-started/dotnet), [Python](/get-started/python), [Node.JS](/get-started/nodejs), [and more](/kafka-languages-and-tools).
+向主题写入事件的应用程序称为[生产者](https://docs.confluent.io/platform/current/clients/producer.html)。生产者有多种形式，代表[事件源](../event-source/event-source.md)模式。读取事件由代表[事件接收器](../event-sink/event-sink.md)的[消费者](https://docs.confluent.io/platform/current/clients/consumer.html)执行。消费者通常以分布式、协调的方式运行以提高规模和容错性。[事件处理应用程序](../event-processing/event-processing-application.md)既作为事件源又作为事件接收器。
 
-### Stream Processing
-[Event Processing Applications](../event-processing/event-processing-application.md) can be built atop Kafka using a variety of technologies. 
+如上所述产生和消费事件的应用程序被称为"客户端"。这些客户端应用程序可以用各种编程语言编写，包括[Java](/get-started/java)、[Go](/get-started/go)、[C/C++](/get-started/c)、[C# (.NET)](/get-started/dotnet)、[Python](/get-started/python)、[Node.JS](/get-started/nodejs)、[等等](/kafka-languages-and-tools)。
+
+### 流处理
+
+[事件处理应用程序](../event-processing/event-processing-application.md)可以使用各种技术在Kafka之上构建。
 
 #### Apache Flink®
 
-[Flink](https://nightlies.apache.org/flink/flink-docs-stable/) is a distributed stream processing framework with built-in support for Kafka topics as source and sink. It includes declarative Java and Python APIs as well as [Flink SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) that supports a familiar standard SQL syntax.
+[Flink](https://nightlies.apache.org/flink/flink-docs-stable/)是一个分布式流处理框架，内置支持Kafka主题作为源和接收器。它包括声明式Java和Python API以及支持熟悉的标准SQL语法的[Flink SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)。
 
 #### Kafka Streams
-The Kafka client library [Kafka Streams](https://docs.confluent.io/platform/current/streams/index.html) allows you to build elastic applications and microservices on the JVM, using languages such as Java and Scala. An application can run in a distributed fashion across multiple instances for better scalability and fault-tolerance.
 
-### Data Integrations 
+Kafka客户端库[Kafka Streams](https://docs.confluent.io/platform/current/streams/index.html)允许您使用Java和Scala等语言在JVM上构建弹性应用程序和微服务。应用程序可以在多个实例中以分布式方式运行，以获得更好的可扩展性和容错性。
 
-The [Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html) framework allows you to scalably and reliably integrate cloud services and data systems external to Kafka into the Event Streaming Platform. Data from these systems is set in motion by being continuously imported and/or exported as [Event Streams](../event-stream/event-stream.md) through Kafka _connectors_. There are hundreds of ready-to-use Kafka connectors available on [Confluent Hub](https://www.confluent.io/hub/). On-boarding existing data systems into Kafka is often the first step in the journey of adopting an Event Streaming Platform. 
+### 数据集成
 
-[Source Connectors](../event-source/event-source-connector.md) pull data into Kafka topics from sources such as traditional databases, cloud object storage services, or SaaS products such as Salesforce. Advanced integrations are possible with patterns such as [Database Write Through](../event-source/database-write-through.md) and [Database Write Aside](../event-source/database-write-aside.md).
+[Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html)框架允许您可扩展且可靠地将Kafka外部的云服务和数据系统集成到事件流平台中。这些系统的数据通过Kafka_连接器_作为[事件流](../event-stream/event-stream.md)持续导入和/或导出而处于运动中。[Confluent Hub](https://www.confluent.io/hub/)上有数百个即用型Kafka连接器。将现有数据系统引入Kafka通常是采用事件流平台之旅的第一步。
 
-[Sink Connectors](../event-sink/event-sink-connector.md) are the complementary pattern to [Source Connectors](../event-source/event-source.md). While source connectors bring data into the Event Streaming Platform continuously, sinks continuously deliver data from Kafka streams to external cloud services and systems. Common destination systems include cloud data warehouse services, function-based serverless compute services, relational databases, Elasticsearch, and cloud object storage services.
+[源连接器](../event-source/event-source-connector.md)从传统数据库、云对象存储服务或Salesforce等SaaS产品等源将数据拉入Kafka主题。可以通过[数据库直写](../event-source/database-write-through.md)和[数据库旁路写入](../event-source/database-write-aside.md)等模式进行高级集成。
 
-## Considerations 
-Event Streaming Platforms are distributed computing systems made up of a diverse set of components. Because building and operating such a platform requires significant engineering expertise and resources, many organizations opt for a fully-managed Kafka service such as [Confluent Cloud](https://www.confluent.io/confluent-cloud/), rather than self-managing the platform, so that they can focus on creating business value.
+[接收器连接器](../event-sink/event-sink-connector.md)是[源连接器](../event-source/event-source.md)的补充模式。虽然源连接器持续将数据带入事件流平台，但接收器持续将数据从Kafka流传递到外部云服务和系统。常见的目标系统包括云数据仓库服务、基于函数的无服务器计算服务、关系数据库、Elasticsearch和云对象存储服务。
 
-## References
-* This pattern is derived from [Message Bus](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageBus.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
-* [Confluent Cloud](https://www.confluent.io/confluent-cloud/) is a cloud-native service for Apache Kafka®.
-* The [Apache Kafka 101](/learn-kafka/apache-kafka/) course provides a primer on what Kafka is and how it works.
+## 注意事项
+
+事件流平台是由各种组件组成的分布式计算系统。因为构建和操作这样的平台需要大量的工程专业知识和资源，许多组织选择完全托管的Kafka服务，如[Confluent Cloud](https://www.confluent.io/confluent-cloud/)，而不是自我管理平台，以便他们可以专注于创造业务价值。
+
+## 参考资料
+
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息总线](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageBus.html)。
+* [Confluent Cloud](https://www.confluent.io/confluent-cloud/)是Apache Kafka®的云原生服务。
+* [Apache Kafka 101](/learn-kafka/apache-kafka/)课程提供了关于Kafka是什么以及它如何工作的入门。

@@ -1,59 +1,34 @@
 ---
 seo:
-  title: Logical AND
-  description: The Logical AND of two or more Event Streams synthesizes a new Event using stream joins.
+  title: 逻辑与
+  description: 两个或多个事件流的逻辑与使用流连接合成新事件。
 ---
 
-# Logical AND
+# 逻辑与
 
-[Event Streams](../event-stream/event-stream.md) become more interesting when
-they're considered together. Often, when two separate
-[Events](../event/event.md) occur, that triggers a new fact that we want to
-capture. A product can only be dispatched when there's an order *and* a
-successful payment. If someone places a bet *and* their horse wins,
-then we transfer money to them.
+[事件流](../event-stream/event-stream.md)在考虑在一起时变得更有趣。通常，当两个单独的[事件](../event/event.md)发生时，会触发我们想要捕获的新事实。只有当有订单*和*成功支付时，产品才能被派送。如果某人下注*并且*他们的马赢了，那么我们就向他们转账。
 
-How can we combine information from several different Event Streams and use it
-to create new Events?
+我们如何组合来自几个不同事件流的信息并用它来创建新事件？
 
-## Problem
+## 问题
 
-How can an application trigger processing when two or more related
-Events arrive on different Event Streams?
+当两个或更多相关事件到达不同事件流时，应用程序如何触发处理？
 
-## Solution
+## 解决方案
 ![logical AND](../img/logical-and.svg)
 
-Multiple streams of Events can be joined together, similar to joins in
-a relational database. We watch the Event Streams and remember their most
-recent Events (for example, via an in-memory cache, or a local or network
-storage device) for a certain amount of time. Whenever a new Event
-arrives, we consider it alongside the other recently-captured Events,
-and look for matches. If we find one, we emit a new Event.
+多个事件流可以连接在一起，类似于关系数据库中的连接。我们监视事件流并记住它们最近的事件（例如，通过内存缓存或本地或网络存储设备）一段时间。每当新事件到达时，我们将其与其他最近捕获的事件一起考虑，并寻找匹配项。如果我们找到一个，我们就发出一个新事件。
 
-For stream-stream joins, it's important to think about what we
-consider a "recent" Event. We can't join brand new Events with
-arbitrarily-old ones; to join potentially-infinite streams would
-require potentially-infinite memory. Instead, we decide on a retention
-period that counts as "new enough", and only hold on to Events during that
-period. This is often just fine -- for example, a payment will usually happen soon
-after an order is placed. If it doesn't go through within the hour, we
-can reasonably expect a different process to chase the user for
-updated payment details.
+对于流-流连接，重要的是要考虑我们认为什么是"最近"的事件。我们不能将全新的事件与任意旧的事件连接；连接潜在无限流将需要潜在无限内存。相反，我们决定一个保留期，该保留期算作"足够新"，并且只在该期间内保留事件。这通常很好——例如，支付通常在下订单后很快发生。如果在一小时内没有通过，我们可以合理地期望不同的流程来追查用户的更新支付详细信息。
 
-## Implementation
+## 实现
 
-As an example, imagine a bank that captures `logins` to its website,
-and `withdrawals` from an ATM. The fraud department might be keen to
-hear if the same `user_id` logs in to the website in one country, and makes a
-withdrawal in a different country, within the same day. (This would
-not necessarily be fraud, but it's certainly suspicious!)
+作为示例，想象一家银行捕获其网站的`logins`和ATM的`withdrawals`。欺诈部门可能很想听到同一个`user_id`在一个国家登录网站，并在同一天在另一个国家进行提款。（这不一定是欺诈，但肯定可疑！）
 
-To implement this example, we'll use [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/). We start with two Event Streams:
+要实现此示例，我们将使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)。我们从两个事件流开始：
 
 ```sql
--- For simplicity's sake, we'll assume that IP addresses 
--- have already been converted into country codes.
+-- 为了简单起见，我们假设IP地址已经转换为国家代码。
 
 CREATE TABLE logins (
   user_id BIGINT NOT NULL,
@@ -68,7 +43,7 @@ CREATE TABLE withdrawals (
 );
 ```
 
-We can now join these two Event Streams. Events with the same `user_id` are considered logins by the same person:
+我们现在可以连接这两个事件流。具有相同`user_id`的事件被认为是同一个人的登录：
 
 ```sql
 CREATE STREAM possible_frauds AS
@@ -79,13 +54,13 @@ CREATE STREAM possible_frauds AS
     WHERE l.country_code <> w.country_code;
 ```
 
-Query that table in one terminal:
+在一个终端中查询该表：
 
 ```sql
 SELECT * FROM possible_frauds;
 ```
 
-Insert some data into the `logins` and `withdrawals` tables in another terminal:
+在另一个终端中向`logins`和`withdrawals`表插入一些数据：
 
 ```sql
 INSERT INTO logins VALUES
@@ -102,7 +77,7 @@ INSERT INTO withdrawals VALUES
     (2, 'fr', 20.00, true);
 ```
 
-This produces a stream of possible fraud cases that need further investigation:
+这产生了一个需要进一步调查的可能欺诈案例流：
 
 ```
     user_id     country_code    country_code0       amount success
@@ -111,18 +86,14 @@ This produces a stream of possible fraud cases that need further investigation:
           2               us               fr        20.00    TRUE
 ```
 
-## Considerations
+## 注意事项
 
-Joining Event Streams is fairly simple. The big consideration is how
-long of a retention period we need, and by extension, the amount of resources that our join will
-use. Planning that tradeoff requires careful consideration of the
-specific problem that we're solving.
+连接事件流相当简单。重要的考虑是我们需要多长的保留期，以及我们的连接将使用的资源量。规划这种权衡需要仔细考虑我们正在解决的具体问题。
 
-For long retention periods, consider joining an Event Stream to a
-[Projection Table](../table/projection-table.md) instead.
+对于长保留期，考虑将事件流连接到[投影表](../table/projection-table.md)。
 
-## References
+## 参考资料
 
-* See also the [Pipeline](../compositional-patterns/pipeline.md) pattern, used for considering Events in series (rather than in parallel).
-* See also the [Projection Table](../table/projection-table.md) pattern, a memory-efficient way of considering an Event Stream over a potentially-infinite time period.
-* See chapter 14 of [Designing Event-Driven Systems](https://www.confluent.io/designing-event-driven-systems/) for further discussion.
+* 另请参阅[管道](../compositional-patterns/pipeline.md)模式，用于按顺序（而不是并行）考虑事件。
+* 另请参阅[投影表](../table/projection-table.md)模式，这是在潜在无限时间段内考虑事件流的内存高效方式。
+* 有关进一步讨论，请参阅[设计事件驱动系统](https://www.confluent.io/designing-event-driven-systems/)的第14章。

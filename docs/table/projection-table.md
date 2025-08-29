@@ -1,35 +1,35 @@
 ---
 seo:
-  title: Projection Table
-  description: A Projection Table acts as a materialized view of an Event Stream or change log, grouping and summarizing events into a unified state.
+  title: 投影表
+  description: 投影表充当事件流或变更日志的物化视图，将事件分组和汇总为统一状态。
 ---
 
-# Projection Table
+# 投影表
 
-One of the first questions we want to ask of a stream of events is, "Where are we now?"
+我们想要问事件流的第一个问题是，"我们现在在哪里？"
 
-If we have a stream of sales events, we'd like to have the total sales figures at our fingertips. If we have a stream of `login` events, we'd like to know when each user last logged in. If our trucks send GPS data every minute, we'd like to know where each truck is right now.
+如果我们有销售事件流，我们希望手头有总销售数字。如果我们有`login`事件流，我们希望知道每个用户最后登录的时间。如果我们的卡车每分钟发送GPS数据，我们希望知道每辆卡车现在在哪里。
 
-How do we efficiently roll up data? How do we preserve a complete event log and enjoy the fast queries of an "update-in-place" style database?
+我们如何有效地汇总数据？我们如何保留完整的事件日志并享受"就地更新"风格数据库的快速查询？
 
-## Problem
+## 问题
 
-How can a stream of change events be efficiently summarized to give the current state of the world?
+如何有效地汇总变更事件流以给出世界的当前状态？
 
-## Solution
+## 解决方案
 ![Projection Table](../img/projection-table.svg)
 
-We can maintain a projection table that behaves just like a materialized view in a traditional database. As new events come in, the table is automatically updated, constantly giving us a live picture of the system. Events with the same key are considered related; newer events are interpreted, depending on their contents, as updates to or deletions of older events.
+我们可以维护一个行为就像传统数据库中物化视图的投影表。随着新事件的到来，表会自动更新，不断为我们提供系统的实时画面。具有相同键的事件被认为是相关的；较新的事件根据其内容被解释为对较旧事件的更新或删除。
 
-As with a materialized view, projection tables are read-only. To change a projection table, we change the underlying data by recording new events to the table's underlying stream.
+与物化视图一样，投影表是只读的。要更改投影表，我们通过向表的基础流记录新事件来更改基础数据。
 
-## Implementation
+## 实现
 
-[Apache Flink®](https://nightlies.apache.org/flink/flink-docs-stable/) supports [dynamic tables](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/concepts/dynamic_tables/#dynamic-tables-amp-continuous-queries) as a core concept in its Table API and SQL support. A continuous query on a dynamic table in Flink is very similar to a materialized view in a traditional database.
+[Apache Flink®](https://nightlies.apache.org/flink/flink-docs-stable/)支持[动态表](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/concepts/dynamic_tables/#dynamic-tables-amp-continuous-queries)作为其Table API和SQL支持的核心概念。Flink中动态表的连续查询与传统数据库中的物化视图非常相似。
 
-As an example, imagine that we are shipping packages around the world. As a package reaches each point on its journey, it is logged with its current location.
+作为示例，想象我们正在世界各地运送包裹。当包裹到达其旅程中的每个点时，都会记录其当前位置。
 
-Let's start with a stream of package check-in events:
+让我们从包裹签入事件流开始：
 
 ```sql
 CREATE TABLE package_checkins (
@@ -38,7 +38,7 @@ CREATE TABLE package_checkins (
 );
 ```
 
-To track each package's most recent `location`:
+要跟踪每个包裹的最新`location`：
 
 ```sql
 CREATE TABLE current_package_locations AS
@@ -54,9 +54,9 @@ CREATE TABLE current_package_locations AS
   );
 ```
 
-As new data is inserted into the `package_checkins` table, the `current_package_locations` table is updated, so we can see the current location of each package without scanning through the event history every time.
+随着新数据插入到`package_checkins`表中，`current_package_locations`表会更新，因此我们可以看到每个包裹的当前位置，而无需每次都扫描事件历史。
 
-## References
+## 参考资料
 
-* Flink SQL [window functions][https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/hive-compatibility/hive-dialect/queries/window-functions/]
-* See also the [State Table](../table/state-table.md) pattern.
+* Flink SQL [窗口函数](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/hive-compatibility/hive-dialect/queries/window-functions/)
+* 另请参阅[状态表](../table/state-table.md)模式。

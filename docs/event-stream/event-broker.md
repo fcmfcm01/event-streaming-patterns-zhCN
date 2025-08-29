@@ -1,29 +1,34 @@
 ---
 seo:
-  title: Event Broker
-  description: Event Brokers allow applications and services to communicate in a loosely-coupled manner. Multiple brokers are deployed as a distributed cluster to ensure elasticity, scalability, and fault-tolerance during operations.
+  title: 事件代理
+  description: 事件代理允许应用程序和服务以松耦合的方式进行通信。多个代理部署为分布式集群，以确保操作期间的弹性、可扩展性和容错性。
 ---
 
-# Event Broker
-In a software architecture, loosely-coupled components allow services and applications to change with minimal impact on their dependent systems and applications. On the side of the organization, this loose coupling also allows different development teams to efficiently work independently of each other.
+# 事件代理
 
-## Problem
-How can we decouple [Event Sources](../event-source/event-source.md) from [Event Sinks](../event-sink/event-sink.md), given that both may include cloud services, systems such as relational databases, and applications and microservices?
+在软件架构中，松耦合组件允许服务和应用程序在对其依赖系统和应用程序影响最小的情况下进行变更。在组织方面，这种松耦合还允许不同的开发团队高效地独立工作。
 
-## Solution
+## 问题
+
+考虑到[事件源](../event-source/event-source.md)和[事件接收器](../event-sink/event-sink.md)都可能包括云服务、关系数据库等系统以及应用程序和微服务，我们如何将事件源与事件接收器解耦？
+
+## 解决方案
 ![event-broker](../img/event-broker.svg)
 
-We can use the Event Broker of an [Event Streaming Platform](../event-stream/event-streaming-platform.md) to provide this decoupling. Typically, multiple event brokers are deployed as a distributed cluster to ensure elasticity, scalability, and fault-tolerance during operations. Event brokers collaborate on receiving and durably storing [Events](../event/event.md) (write operations) as well as serving events (read operations) into [Event Streams](../event-stream/event-stream.md) from one or many clients in parallel. Clients that produce events are called [Event Sources](../event-source/event-source.md) and are decoupled and isolated, through the brokers, from clients that consume the events, which are called [Event Sinks](../event-sink/event-sink.md). 
+我们可以使用[事件流平台](../event-stream/event-streaming-platform.md)的事件代理来提供这种解耦。通常，多个事件代理部署为分布式集群，以确保操作期间的弹性、可扩展性和容错性。事件代理协作接收和持久存储[事件](../event/event.md)（写操作）以及从并行的一个或多个客户端向[事件流](../event-stream/event-stream.md)提供事件（读操作）。产生事件的客户端称为[事件源](../event-source/event-source.md)，通过代理与消费事件的客户端（称为[事件接收器](../event-sink/event-sink.md)）解耦和隔离。
 
-Typically, the technical architecture follows the design of "dumb brokers, smart clients." Here, the broker intentionally limits its client-facing functionality to achieve the best performance and scalability. This means that additional work must be performed by the broker's clients. For example, unlike in traditional messaging brokers, it is the responsibility of an event sink (a consumer) to track its individual progress of reading and processing from an event stream.
+通常，技术架构遵循"哑代理，智能客户端"的设计。在这里，代理故意限制其面向客户端的功能以实现最佳性能和可扩展性。这意味着额外的工作必须由代理的客户端执行。例如，与传统消息代理不同，事件接收器（消费者）负责跟踪其从事件流读取和处理的个人进度。
 
-## Implementation
-[Apache Kafka®](https://kafka.apache.org/) is an open-source, distributed [Event Streaming Platform](../event-stream/event-streaming-platform.md), which implements the Event Broker pattern. Kafka runs as a highly scalable and fault-tolerant cluster of brokers. Many [Event Processing Applications](../event-processing/event-processing-application.md) can produce, consume, and process Events from the cluster in parallel, with strong guarantees such as transactions, using a fully decoupled and yet coordinated architecture.
+## 实现
 
-Additionally, Kafka's protocol provides strong backwards compatibility and forwards compatibility guarantees between the server-side brokers and their client applications that produce, consume, and process events. For example, client applications using a new version of Kafka can work with a cluster of brokers running an older version of Kafka. Similarly, older client applications continue to work even when the cluster of brokers is upgraded to a newer version of Kafka (and Kafka also supports in-place version upgrades of clusters). This is another example of decoupling the various components in a Kafka-based architecture, resulting in even better flexibility during design and operations.
+[Apache Kafka®](https://kafka.apache.org/)是一个开源的分布式[事件流平台](../event-stream/event-streaming-platform.md)，它实现了事件代理模式。Kafka作为高度可扩展和容错的代理集群运行。许多[事件处理应用程序](../event-processing/event-processing-application.md)可以并行地从集群产生、消费和处理事件，具有强保证，如事务，使用完全解耦但协调的架构。
 
-## Considerations
-* In contrast to traditional message brokers, event brokers provide a distributed, durable, and fault-tolerant storage layer. This has several important benefits. For instance, client applications can initiate and resume event production and consumption independently from each other. Similarly, the client applications don't need to be connected to the brokers perpetually in order to not miss any events. When an application is taken offline for maintenance and subsequently restarted, it will then automatically resume its consumption and processing of an event stream exactly at the point where it stopped before. The strong guarantees provided by the brokers in the Event Streaming Platform ensure that applications do not suffer from duplicate data or from data loss (for example, missing out on events that were written during the maintenance window) in these situations, even in the face of failures such as machine or network outages. Another benefit is that client applications can "rewind the time" and re-consume historical data in event streams as often as needed. This is useful in many situations, including A/B testing, auditing and compliance, and training and retraining models for machine learning, as well as when fixing unexpected application errors and bugs that occurred in production.
+此外，Kafka的协议在服务器端代理和产生、消费和处理事件的客户端应用程序之间提供强向后兼容性和向前兼容性保证。例如，使用新版本Kafka的客户端应用程序可以与运行旧版本Kafka的代理集群一起工作。类似地，即使代理集群升级到更新版本的Kafka，较旧的客户端应用程序也继续工作（Kafka还支持集群的就地版本升级）。这是基于Kafka架构中解耦各种组件的另一个例子，在设计和操作期间产生更好的灵活性。
 
-## References
-* This pattern is derived from [Message Broker](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageBroker.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
+## 注意事项
+
+* 与传统消息代理相比，事件代理提供分布式、持久和容错的存储层。这有几个重要好处。例如，客户端应用程序可以独立地启动和恢复事件生产和消费。类似地，客户端应用程序不需要永久连接到代理以避免错过任何事件。当应用程序离线进行维护并随后重启时，它将自动从其停止的确切点恢复事件流的消费和处理。事件流平台中代理提供的强保证确保应用程序在这些情况下不会遭受重复数据或数据丢失（例如，错过维护窗口期间写入的事件），即使面对机器或网络中断等故障。另一个好处是客户端应用程序可以"倒回时间"并根据需要重新消费事件流中的历史数据。这在许多情况下都很有用，包括A/B测试、审计和合规性、机器学习的模型训练和重新训练，以及修复生产环境中发生的意外应用程序错误和bug。
+
+## 参考资料
+
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息代理](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageBroker.html)。

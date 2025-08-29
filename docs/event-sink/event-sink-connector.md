@@ -1,21 +1,24 @@
 ---
 seo:
-  title: Event Sink Connector
-  description: Event Sink Connectors transfer events from an event stream into a specific external system
+  title: 事件接收器连接器
+  description: 事件接收器连接器将事件从事件流传输到特定的外部系统
 ---
 
-# Event Sink Connector
-Connecting external systems to the [Event Streaming Platform](../event-stream/event-streaming-platform.md) allows for advanced and specialized integrations. 
+# 事件接收器连接器
 
-## Problem
-How can we connect applications or external systems, like databases, to an [Event Streaming Platform](../event-stream/event-streaming-platform.md) so that it can receive [Events](../event/event.md)?
+将外部系统连接到[事件流平台](../event-stream/event-streaming-platform.md)允许高级和专门的集成。
 
-## Solution
+## 问题
+
+我们如何将应用程序或外部系统（如数据库）连接到[事件流平台](../event-stream/event-streaming-platform.md)，以便它可以接收[事件](../event/event.md)？
+
+## 解决方案
 ![event-sink-connector](../img/event-sink-connector.svg)
 
-Event Sink Connector is a specific implementation of an [Event Sink](event-sink.md). Use an Event Sink Connector to transfer [Events](../event/event.md) from the [Event Stream](../event-stream/event-stream.md) into the specific external system. 
+事件接收器连接器是[事件接收器](event-sink.md)的特定实现。使用事件接收器连接器将[事件](../event/event.md)从[事件流](../event-stream/event-stream.md)传输到特定的外部系统。
 
-## Implementation
+## 实现
+
 ```
 CREATE SINK CONNECTOR JDBC_SINK_POSTGRES_01 WITH (
     'connector.class'     = 'io.confluent.connect.jdbc.JdbcSinkConnector',
@@ -28,11 +31,13 @@ CREATE SINK CONNECTOR JDBC_SINK_POSTGRES_01 WITH (
 );
 ```
 
-When connecting a system like a relational database to Apache Kafka®, the most common option is to use [Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html). The connector reads events from the [Event Streaming Platform](../event-stream/event-streaming-platform.md), performs any necessary transformations, and writes the [Events](../event/event.md) to the specified [Event Sink](../event-sink/event-sink.md).
+当将关系数据库等系统连接到Apache Kafka®时，最常见的选项是使用[Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html)。连接器从[事件流平台](../event-stream/event-streaming-platform.md)读取事件，执行任何必要的转换，并将[事件](../event/event.md)写入指定的[事件接收器](../event-sink/event-sink.md)。
 
-## Considerations
-* There are many Event Sink Connectors readily available for Apache Kafka, e.g. connectors for relational databases or object storage systems like AWS S3.  See [Confluent Hub](https://www.confluent.io/hub/) for available connectors.
-* Security policies as well as regulatory compliance may require appropriate settings for encrypted communication, authentication and authorization, etc. between event sink, event sink connector, and the event streaming platform.
+## 注意事项
 
-## References
-* This pattern is derived from [Channel Adapter](https://www.enterpriseintegrationpatterns.com/patterns/messaging/ChannelAdapter.html) in Enterprise Integration Patterns by Gregor Hohpe and Bobby Woolf
+* 有许多事件接收器连接器可用于Apache Kafka，例如关系数据库或像AWS S3这样的对象存储系统的连接器。有关可用连接器，请参阅[Confluent Hub](https://www.confluent.io/hub/)。
+* 安全策略以及法规合规性可能需要在事件接收器、事件接收器连接器和事件流平台之间进行适当的加密通信、身份验证和授权等设置。
+
+## 参考资料
+
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[通道适配器](https://www.enterpriseintegrationpatterns.com/patterns/messaging/ChannelAdapter.html)

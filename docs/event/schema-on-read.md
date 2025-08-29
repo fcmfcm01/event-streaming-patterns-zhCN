@@ -1,36 +1,35 @@
 ---
 seo:
-  title: Schema-on-Read
-  description: Schema on Read enables a reader of data to determine which schema to apply to processed data.
+  title: 读取时模式
+  description: 读取时模式使数据读取者能够确定对处理数据应用哪种模式。
 ---
 
-# Schema-on-Read
-Schema-on-Read leaves the validation of an [Event](../event/event.md) schema to the reader.
-There are several use cases for this pattern, and all of them provide a lot of flexibility to [Event Processors](../event-processing/event-processor.md) and [Event Sinks](../event-sink/event-sink.md):
+# 读取时模式
+读取时模式将[事件](../event/event.md)模式的验证留给读取者。这种模式有几个用例，它们都为[事件处理器](../event-processing/event-processor.md)和[事件接收器](../event-sink/event-sink.md)提供了很大的灵活性：
 
-1. There may be different versions of the same schema type, and the reader wants to choose which version to apply to a given event.
+1. 可能存在同一模式类型的不同版本，读取者想要选择将哪个版本应用于给定事件。
 
-2. The sequencing may matter between events of different types, while all of the different event types are put into a single stream.  For example, consider a banking use case where a customer first opens an account, then gets approval, then makes a deposit, and so on. Put these heterogeneous [Event](../event/event.md) types into the same stream, allowing the [Event Streaming Platform](../event-stream/event-streaming-platform.md) to maintain event ordering and allowing any consuming [Event Processors](../event-processing/event-processor.md) and [Event Sinks](../event-sink/event-sink.md) to [deserialize](../event/event-deserializer.md) the events as needed.
+2. 不同类型事件之间的排序可能很重要，而所有不同的事件类型都被放入单个流中。例如，考虑一个银行用例，客户首先开立账户，然后获得批准，然后进行存款，等等。将这些异构[事件](../event/event.md)类型放入同一流中，允许[事件流平台](../event-stream/event-streaming-platform.md)维护事件排序，并允许任何消费的[事件处理器](../event-processing/event-processor.md)和[事件接收器](../event-sink/event-sink.md)根据需要[反序列化](../event/event-deserializer.md)事件。
 
-3. There may be unstructured data written into an [Event Stream](../event-stream/event-stream.md), and the reader can then apply whichever schema it wants.
+3. 可能有非结构化数据写入[事件流](../event-stream/event-stream.md)，然后读取者可以应用它想要的任何模式。
 
-## Problem
-How can an [Event Processor](../event-processing/event-processor.md) apply a schema to data while reading the data from an [Event Streaming Platform](../event-stream/event-streaming-platform.md)?
+## 问题
+[事件处理器](../event-processing/event-processor.md)如何在对[事件流平台](../event-stream/event-streaming-platform.md)读取数据时对数据应用模式？
 
-## Solution
+## 解决方案
 ![schema-on-read](../img/schema-on-read.svg)
 
-The Schema-on-Read approach enables each reader to decide how to read data, and which version of which schema to apply to each [Event](../event/event.md) that it reads.
-To make schema management easier, the design can use a centralized repository that stores multiple versions of different schemas, and then client applications can choose which schema to apply to events at runtime.
+读取时模式方法使每个读取者能够决定如何读取数据，以及将哪个模式的哪个版本应用于它读取的每个[事件](../event/event.md)。
+为了使模式管理更容易，设计可以使用集中式存储库来存储不同模式的多个版本，然后客户端应用程序可以在运行时选择将哪个模式应用于事件。
 
-## Implementation
-With [Confluent Schema Registry](https://docs.confluent.io/cloud/current/cp-component/schema-reg-cloud-config.html), all of the schemas are managed in a centralized repository.
-In addition to storing the schema information, Schema Registry can be configured to check and enforce that schema changes are compatible with previous versions.
+## 实现
+使用[Confluent Schema Registry](https://docs.confluent.io/cloud/current/cp-component/schema-reg-cloud-config.html)，所有模式都在集中式存储库中管理。
+除了存储模式信息外，Schema Registry还可以配置为检查并强制执行模式更改与先前版本的兼容性。
 
-For example, if a business started with a schema definition for an event that has two fields, but the business needs later evolve to warrant an optional third field, then the schema evolves with the needs of the business.
-Schema Registry ensures that the new schema is compatible with the old schema.
-In this particular case, for backward compatibility, the third field, `status`, can be defined with a default value, which will be used for the missing field when deserializing data encoded with the old schema.
-This ensures that all events in a given stream follow [Schema Compatibility](../event-stream/schema-compatibility.md) rules and that applications can continue to process those events.
+例如，如果企业从具有两个字段的事件模式定义开始，但企业需求后来演变为需要可选的第三个字段，那么模式会随着企业需求而演进。
+Schema Registry确保新模式与旧模式兼容。
+在这种特定情况下，为了向后兼容，第三个字段`status`可以用默认值定义，当反序列化用旧模式编码的数据时，将用于缺失字段。
+这确保给定流中的所有事件都遵循[模式兼容性](../event-stream/schema-compatibility.md)规则，并且应用程序可以继续处理这些事件。
 
 ```
 {
@@ -45,10 +44,10 @@ This ensures that all events in a given stream follow [Schema Compatibility](../
 }
 ```
 
-As another example, if a use case warrants different event types being written into a single stream, with Apache Kafka® you can set the "subject naming strategy" to register schemas against the record type instead of the Kafka topic.
-Schema Registry will then allow for [Schema Evolution](../event-stream/schema-evolution.md) and [Schema Compatibility](../event-stream/schema-compatibility.md) validation to be performed within the scope of each event type rather than the topic.
+作为另一个示例，如果用例需要将不同的事件类型写入单个流，使用Apache Kafka®，您可以将"主题命名策略"设置为针对记录类型而不是Kafka主题注册模式。
+Schema Registry然后将允许在每种事件类型的范围内而不是主题范围内执行[模式演进](../event-stream/schema-evolution.md)和[模式兼容性](../event-stream/schema-compatibility.md)验证。
 
-The consumer application can read schema versions assigned to the data type, and if there are different data types in any given stream, the application can cast each event to the appropriate type at processing time and then follow the appropriate code path:
+消费者应用程序可以读取分配给数据类型的模式版本，如果任何给定流中有不同的数据类型，应用程序可以在处理时将每个事件转换为适当的类型，然后遵循适当的代码路径：
 
 ```java
 if (Account.equals(record.getClass()) {
@@ -62,11 +61,11 @@ if (Account.equals(record.getClass()) {
 }
 ```
 
-## Considerations
-The schema's subject naming strategy can be set to record type (rather than Kafka topic) in one of two ways.
-The less restrictive is `RecordNameStrategy`, which sets the namespace to the record, regardless of the topic to which the event is written.
-The more restrictive is `TopicRecordNameStrategy`, which sets the namespace to both the record and the topic to which the event is written.
+## 注意事项
+模式的主题命名策略可以通过两种方式之一设置为记录类型（而不是Kafka主题）。
+限制较少的是`RecordNameStrategy`，它将命名空间设置为记录，无论事件写入到哪个主题。
+限制较多的是`TopicRecordNameStrategy`，它将命名空间设置为记录和事件写入的主题。
 
-## References
-* [Should You Put Several Event Types in the Same Kafka Topic?](https://www.confluent.io/blog/put-several-event-types-kafka-topic/)
-* [Confluent Schema Registry documentation](https://docs.confluent.io/cloud/current/cp-component/schema-reg-cloud-config.html)
+## 参考资料
+* [您应该将几种事件类型放在同一个Kafka主题中吗？](https://www.confluent.io/blog/put-several-event-types-kafka-topic/)
+* [Confluent Schema Registry文档](https://docs.confluent.io/cloud/current/cp-component/schema-reg-cloud-config.html)

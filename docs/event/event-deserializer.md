@@ -1,64 +1,34 @@
 ---
 seo:
-  title: Event Deserializer
-  description: An Event Deserializer translates events that have been encoded for storage into usable, language-specific data structures.
+  title: 事件反序列化器
+  description: 事件反序列化器将已编码存储的事件转换为可用的、特定于语言的数据结构。
 ---
 
-# Event Deserializer
+# 事件反序列化器
 
-Data has a long lifecycle, often outliving the programs that
-originally gathered and stored it. And data originates from a wide
-variety of systems and programming languages. The more easily we can
-access that ocean of data, the richer the analysis we can perform.
+数据有很长的生命周期，通常比最初收集和存储它的程序寿命更长。数据来自各种系统和编程语言。我们越容易访问这些数据海洋，我们就能进行越丰富的分析。
 
-In an online shopping business, data recorded by the order-processing
-system and from data user behavior may prove invaluable to the website
-design department, _provided they can actually access it_. It's
-vital to be able to read data from an [Event
-Store](../event-storage/event-store.md) regardless of which process
-and which department put it there originally.
+在在线购物业务中，订单处理系统记录的数据和用户行为数据可能对网站设计部门非常宝贵，_前提是他们能够实际访问它_。能够从[事件存储](../event-storage/event-store.md)读取数据是至关重要的，无论最初是哪个过程和哪个部门将其放在那里。
 
-To a large degree, the accessibility of data is determined at write
-time, by our choice of [Event
-Serializer](event-serializer.md). Still, the story is certainly not
-complete until we've read the data back out.
+在很大程度上，数据的可访问性在写入时由我们对[事件序列化器](event-serializer.md)的选择决定。然而，在我们读取数据之前，故事当然还没有完成。
 
-## Problem
+## 问题
 
-How can I reconstruct the original event from its representation in the event streaming platform?
+如何从事件流平台中的表示重建原始事件？
 
-## Solution
+## 解决方案
 
 ![event deserializer](../img/event-deserializer.svg)
 
-Use an [Event Streaming
-Platform](../event-stream/event-streaming-platform.md) that integrates
-well with a schema registry. This makes it easy to encourage (or
-require) writers to record the event's data description for later
-use. Having both the event data and its schema readily available makes
-deserialization easy.
+使用与模式注册表集成良好的[事件流平台](../event-stream/event-streaming-platform.md)。这使得鼓励（或要求）写入者记录事件的数据描述以供以后使用变得容易。同时拥有事件数据及其模式使得反序列化变得容易。
 
-While some data formats are reasonably
-[discoverable](https://en.wikipedia.org/wiki/Discoverability), in
-practice it becomes invaluable to have a precise, permanent record of
-how the data was encoded at the time it was written. This is
-particularly true if the data format has evolved over time and the
-[Event Stream](../event-stream/event-stream.md) may contain more than
-one encoding of semantically-equivalent data.
+虽然某些数据格式是合理的[可发现的](https://en.wikipedia.org/wiki/Discoverability)，但在实践中，拥有数据在写入时如何编码的精确、永久记录变得非常宝贵。如果数据格式随时间演变，并且[事件流](../event-stream/event-stream.md)可能包含语义等效数据的多种编码，这一点尤其重要。
 
-## Implementation
+## 实现
 
-Confluent’s [Schema
-Registry](https://docs.confluent.io/cloud/current/cp-component/schema-reg-cloud-config.html)
-stores a versioned history of the data's schema in Apache Kafka®
-itself. The client libraries can then use this metadata to seamlessly
-reconstruct the original event data, while we can use the registry API
-to manually inspect the schemas, or to build libraries for other
-languages.
+Confluent的[Schema Registry](https://docs.confluent.io/cloud/current/cp-component/schema-reg-cloud-config.html)在Apache Kafka®本身中存储数据模式的版本化历史。客户端库然后可以使用此元数据无缝重建原始事件数据，而我们可以使用注册表API手动检查模式，或为其他语言构建库。
 
-For example, in the [Event Serializer](event-serializer.md) pattern
-we wrote a table of `fx_trades` events. If we want to recall the
-structure of those events we can ask for the Flink SQL table definition:
+例如，在[事件序列化器](event-serializer.md)模式中，我们编写了一个`fx_trades`事件表。如果我们想回忆这些事件的结构，我们可以请求Flink SQL表定义：
 
 ```sh
 DESCRIBE fx_trades;
@@ -75,11 +45,11 @@ DESCRIBE fx_trades;
 +---------------+----------------+-------+-----+--------+-----------+
 ```
 
-Or we can query the Schema Registry directly to see the structure in a
-machine-readable format:
+或者我们可以直接查询Schema Registry以机器可读格式查看结构：
 
 ```sh
 curl http://localhost:8081/subjects/fx_trades-value/versions/latest | jq .```
+```
 
 ```json
 {
@@ -90,7 +60,7 @@ curl http://localhost:8081/subjects/fx_trades-value/versions/latest | jq .```
 }
 ```
 
-Unpacking that `schema` field reveals the [Avro][avro] specification:
+解包该`schema`字段揭示了[Avro][avro]规范：
 
 ```sh
 curl http://localhost:8081/subjects/fx_trades-value/versions/latest | jq -rc .schema | jq .
@@ -135,44 +105,24 @@ curl http://localhost:8081/subjects/fx_trades-value/versions/latest | jq -rc .sc
 }
 ```
 
-An Avro library can use this schema to deserialize the events
-seamlessly. And any client libraries that are Schema Registry-aware
-can automate this lookup, allowing us to forget about encodings
-entirely and focus on the data.
+Avro库可以使用此模式无缝反序列化事件。任何支持Schema Registry的客户端库都可以自动化此查找，允许我们完全忘记编码并专注于数据。
 
-## Considerations
+## 注意事项
 
-In addition to Avro, Schema Registry supports Protobuf and JSON
-Schema. See [Event Serializer](event-serializer.md) for a discussion
-of these formats.
+除了Avro，Schema Registry还支持Protobuf和JSON Schema。有关这些格式的讨论，请参阅[事件序列化器](event-serializer.md)。
 
-While the choice of serialization format is important, it doesn't have
-to be set in stone. For example, it's straightforward to 
-[translate between supported formats with Kafka Streams](https://developer.confluent.io/confluent-tutorials/serialization/kstreams/). 
-For more complex scenarios, we have several strategies for managing schema migration:
+虽然序列化格式的选择很重要，但它不必一成不变。例如，使用Kafka Streams在支持的格式之间进行转换是直接的。对于更复杂的场景，我们有几种管理模式迁移的策略：
 
-* [Schema Compatibility](../event-stream/schema-evolution.md)
-  discusses the kinds of "safe" schema changes that Avro is designed
-  to handle transparently.
-* [Event Translators](../event-processing/event-translator.md ) can
-  convert between different encodings to aid consumption by different
-  systems.
-* [Schema Evolution](../event-stream/schema-evolution.md)
-  discusses splitting and joining streams to simplify serving
-  consumers that can only handle certain versions of the event's
-  schema.
-* An [Event Standardizer](event-standardizer.md) can reformat
-  disparate data encodings into a single unified format.
-* And we always have the option of handling encoding problems directly
-  in code with a [Schema-on-Read](schema-on-read.md) strategy.
+* [模式兼容性](../event-stream/schema-evolution.md)讨论了Avro设计为透明处理的"安全"模式更改类型。
+* [事件转换器](../event-processing/event-translator.md)可以在不同编码之间转换，以帮助不同系统的消费。
+* [模式演进](../event-stream/schema-evolution.md)讨论了分割和连接流，以简化只能处理事件模式某些版本的消费者的服务。
+* [事件标准化器](event-standardizer.md)可以将不同的数据编码重新格式化为单一的统一格式。
+* 我们总是可以选择使用[读取时模式](schema-on-read.md)策略直接在代码中处理编码问题。
 
-## References
+## 参考资料
 
-* The counterpart of an event deserializer (for reading) is an [Event Serializer](event-serializer.md) (for writing).
-* Serializers and deserializers are closely related to [Data
-  Contracts](data-contract.md), in which we want to adhere to a
-  specific serialization format, _and_ constrain the individual events
-  to a certain schema within that format.
-* See also: [Event Mapper](../event-processing/event-mapper.md).
+* 事件反序列化器（用于读取）的对应物是[事件序列化器](event-serializer.md)（用于写入）。
+* 序列化器和反序列化器与[数据契约](data-contract.md)密切相关，其中我们希望遵循特定的序列化格式，_并且_将各个事件限制在该格式内的某个模式。
+* 另请参阅：[事件映射器](../event-processing/event-mapper.md)。
 
 [Avro]: https://avro.apache.org/docs/current/

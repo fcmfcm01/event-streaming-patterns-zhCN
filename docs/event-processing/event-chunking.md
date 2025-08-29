@@ -1,40 +1,43 @@
 ---
 seo:
-   title: Event Chunking
-   description: If an event streaming platform has some natural or configured size limit for the events, instead of storing the entire event, break it into chunks
+   title: 事件分块
+   description: 如果事件流平台对事件有自然或配置的大小限制，不要存储整个事件，而是将其分解为块
 ---
 
-# Event Chunking
+# 事件分块
 
-Sometimes compression can reduce message size, but there are various use cases that entail large message payloads where compression may not be enough.
-Often these use cases are related to image, video, or audio processing: image recognition, video analytics, audio analytics, etc.
+有时压缩可以减少消息大小，但各种用例涉及大型消息负载，其中压缩可能不够。
+这些用例通常与图像、视频或音频处理相关：图像识别、视频分析、音频分析等。
 
-## Problem
+## 问题
 
-How do I handle use cases where the event payload is too large to move through the event streaming platform as a single event?
+如何处理事件负载太大而无法作为单个事件通过事件流平台的用例？
 
-## Solution
+## 解决方案
 
 ![chunking](../img/event-chunking.svg)
 
-Instead of storing the entire event as a single event in the event streaming platform, break it into chunks (an approach called "chunking") so that the large event is sent across as multiple smaller events.
-The producer can do the chunking when writing events into the event streaming platform.
-Downstream clients consume the chunks and, when all the smaller chunks have been received, recombine ("unchunk") them to restore the original event.
+不要将整个事件作为单个事件存储在事件流平台中，而是将其分解为块（一种称为"分块"的方法），以便大型事件作为多个较小事件发送。
+生产者可以在将事件写入事件流平台时进行分块。
+下游客户端消费块，当接收到所有较小的块时，重新组合（"解块"）它们以恢复原始事件。
 
-## Implementation
-Use metadata to track each chunk so that they can be associated to their respective parent event:
+## 实现
 
-- Association between any given chunk and its parent event
-- The chunk’s position in the parent event
-- The total number of chunks of the parent event
+使用元数据跟踪每个块，以便可以将它们与其各自的父事件关联：
 
-## Considerations
-Chunking places additional burden on client applications.
-First, implementing the chunking and unchunking logic requires more application development.
-Second, the consumer application needs to be able to cache the chunks as it waits to receive all the smaller chunks that comprise the original event.
-This, in turn, can have implications on memory fragmentation and longer garbage collection (GC). Mitigating this depends on the programming language: in Java, for example, the JVM heap size and GC can be tuned.
+- 任何给定块与其父事件之间的关联
+- 块在父事件中的位置
+- 父事件的总块数
 
-Client applications that are not aware of the protocol used for chunking events may not be able to reconstruct the original event accurately.
+## 注意事项
 
-## References
-* To handle large events, an alternative approach that may be preferred is [Claim Check](../event-processing/claim-check.md)
+分块对客户端应用程序施加了额外的负担。
+首先，实现分块和解块逻辑需要更多的应用程序开发。
+其次，消费者应用程序需要能够缓存块，因为它等待接收构成原始事件的所有较小块。
+这反过来可能对内存碎片和更长的垃圾收集（GC）产生影响。缓解这取决于编程语言：例如，在Java中，可以调整JVM堆大小和GC。
+
+不了解用于分块事件的协议的客户端应用程序可能无法准确重建原始事件。
+
+## 参考资料
+
+* 要处理大型事件，可能更优选的替代方法是[声明检查](../event-processing/claim-check.md)

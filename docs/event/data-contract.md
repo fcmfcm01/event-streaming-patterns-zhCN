@@ -1,25 +1,25 @@
 ---
 seo:
-  title: Data Contract
-  description: A Data Contract ensures that when an Event Processing Application sends an event, the receiving application knows how to process it.
+  title: 数据契约
+  description: 数据契约确保当事件处理应用程序发送事件时，接收应用程序知道如何处理它。
 ---
 
-# Data Contract 
+# 数据契约
 
-An [Event Processing Application](../event-processing/event-processing-application.md) can send an [Event](../event/event.md) to another Event Processing Application.  It's essential that the communicating applications understand how to process these shared events.
+[事件处理应用程序](../event-processing/event-processing-application.md)可以向另一个事件处理应用程序发送[事件](../event/event.md)。通信的应用程序理解如何处理这些共享事件是至关重要的。
 
-## Problem
-How can an application know how to process an [Event](../event/event.md) sent by another application?
+## 问题
+应用程序如何知道如何处理由另一个应用程序发送的[事件](../event/event.md)？
 
-## Solution
+## 解决方案
 ![data-contract](../img/data-contract.svg)
 
-Using a Data Contract or Schema, different [Event Processing Applications](../event-processing/event-processing-application.md) can share [Events](../event/event.md) and understand how to process them, without the sending application and receiving application knowing any details about each other. The Data Contract pattern allows these different applications to cooperate while remaining loosely coupled, and thus insulated from any internal changes that they may implement. By implementing a data contract or schema, you can provide the same record consistency guarantees as a relational database management system (RDBMS), which integrates a schema by default.
+使用数据契约或模式，不同的[事件处理应用程序](../event-processing/event-processing-application.md)可以共享[事件](../event/event.md)并理解如何处理它们，而发送应用程序和接收应用程序不需要了解彼此的详细信息。数据契约模式允许这些不同的应用程序协作，同时保持松散耦合，从而免受它们可能实施的任何内部更改的影响。通过实施数据契约或模式，您可以提供与关系数据库管理系统（RDBMS）相同的记录一致性保证，后者默认集成模式。
 
-## Implementation
+## 实现
 
-By using a schema to model event objects, Apache Kafka® clients (such as a Kafka producer, a Kafka Streams application, or an [Apache Flink®](https://nightlies.apache.org/flink/flink-docs-stable/) application) can understand how to handle events from different applications that use the same schema.
-For example, we can use Apache Avro to describe a schema:
+通过使用模式来建模事件对象，Apache Kafka®客户端（如Kafka生产者、Kafka Streams应用程序或[Apache Flink®](https://nightlies.apache.org/flink/flink-docs-stable/)应用程序）可以理解如何处理来自使用相同模式的不同应用程序的事件。
+例如，我们可以使用Apache Avro来描述模式：
 ```json
 {
   "type":"record",
@@ -33,15 +33,15 @@ For example, we can use Apache Avro to describe a schema:
 }
 ```
 
-Additionally, using a central repository, such as the Confluent [Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html), makes it easy for Kafka clients to leverage schemas.
+此外，使用中央存储库，如Confluent [Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)，使Kafka客户端能够轻松利用模式。
 
-## Considerations
+## 注意事项
 
-Rather than implementing custom support for a data contract or schema, consider using an industry-accepted framework for schema support, such as the following:
+与其为数据契约或模式实施自定义支持，不如考虑使用行业接受的模式支持框架，如下所示：
 
-* [Apache Avro](https://avro.apache.org/docs/current/spec.html) 
-* [Protocol Buffers](https://developers.google.com/protocol-buffers) (Protobuf)
-* [JSON Schema](https://json-schema.org/).
+* [Apache Avro](https://avro.apache.org/docs/current/spec.html)
+* [Protocol Buffers](https://developers.google.com/protocol-buffers)（Protobuf）
+* [JSON Schema](https://json-schema.org/)。
 
-## References
-* [Yes, Virginia, You Really Do Need a Schema Registry](https://www.confluent.io/blog/schema-registry-kafka-stream-processing-yes-virginia-you-really-need-one/)
+## 参考资料
+* [是的，弗吉尼亚，你真的需要一个模式注册表](https://www.confluent.io/blog/schema-registry-kafka-stream-processing-yes-virginia-you-really-need-one/)

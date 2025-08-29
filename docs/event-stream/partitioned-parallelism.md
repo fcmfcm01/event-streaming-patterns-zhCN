@@ -1,50 +1,55 @@
 ---
 seo:
-  title: Partitioned Parallelism
-  description: A partition is a unit of parallelism that enables concurrent reading, writing, and processing of events at scale.
+  title: 分区并行性
+  description: 分区是并行性的单位，支持大规模并发读取、写入和处理事件。
 ---
 
-# Partitioned Parallelism
-If service goals mandate high throughput, it is useful to be able to distribute event storage, as well as event production and consumption, for parallel processing.
-Distributing and concurrently processing events enables an application to scale.
+# 分区并行性
 
-## Problem
-How can I allocate events across [Event Streams](../event-stream/event-stream.md) and [Tables](../table/state-table.md) so that they can be concurrently processed by distributed [Event Processors](../event-processing/event-processor.md)?
+如果服务目标要求高吞吐量，能够分发事件存储以及事件生产和消费以进行并行处理是有用的。
+分发和并发处理事件使应用程序能够扩展。
 
-## Solution
+## 问题
+
+我如何在[事件流](../event-stream/event-stream.md)和[表](../table/state-table.md)中分配事件，以便它们可以被分布式[事件处理器](../event-processing/event-processor.md)并发处理？
+
+## 解决方案
 ![partitioned-parallelism](../img/partitioned-parallelism.svg)
 
-Use a partitioned event stream, and then assign the events to different partitions of the stream. Essentially, a partition is a unit of parallelism for storing, reading, writing, and processing events. Partitioning enables concurrency and scalability in two main ways:
+使用分区事件流，然后将事件分配给流的不同分区。本质上，分区是用于存储、读取、写入和处理事件的并行性单位。分区通过两种主要方式实现并发性和可扩展性：
 
-* Platform scalability: different [Event Brokers](../event-stream/event-broker.md) can concurrently store and serve [Events](../event/event.md) to [Event Processing Applications](../event-processing/event-processing-application.md)
-* Application scalability: different [Event Processing Applications](../event-processing/event-processing-application.md) can process [Events](../event/event.md) concurrently
+* 平台可扩展性：不同的[事件代理](../event-stream/event-broker.md)可以并发存储[事件](../event/event.md)并为[事件处理应用程序](../event-processing/event-processing-application.md)提供服务
+* 应用程序可扩展性：不同的[事件处理应用程序](../event-processing/event-processing-application.md)可以并发处理[事件](../event/event.md)
 
-Event partitioning also impacts application semantics: placing events into a given partition guarantees that the _ordering_ of events is preserved per partition (but typically not across different partitions of the same stream). This ordering guarantee is crucial for many use cases; very often, the sequencing of events is important (for example, when processing retail orders, an order must be paid before it can be shipped).
+事件分区还影响应用程序语义：将事件放置到给定分区中保证每个分区内事件的_排序_得到保留（但通常不在同一流的不同分区之间）。这种排序保证对许多用例至关重要；事件的排序通常很重要（例如，在处理零售订单时，订单必须在发货前付款）。
 
-## Implementation
-With Apache Kafka®, streams (called _topics_) are created either by an administrator or by a streaming application. The number of partitions is specified at the time the topic is created. For example:
+## 实现
+
+使用Apache Kafka®，流（称为_主题_）由管理员或流应用程序创建。分区数量在创建主题时指定。例如：
 
 ```
 confluent kafka topic create myTopic --partitions 30
 ```
 
-[Events](../event/event.md) are placed into a specific partition according to the partitioning algorithm of the [Event Source](../event-source/event-source.md), such as an [Event Processing Application](../event-processing/event-processing-application.md).
-All events assigned to a given partition have strong ordering guarantees.
+[事件](../event/event.md)根据[事件源](../event-source/event-source.md)的分区算法（如[事件处理应用程序](../event-processing/event-processing-application.md)）放置到特定分区中。
+分配给给定分区的所有事件都有强排序保证。
 
-The common partitioning schemes are:
+常见的分区方案有：
 
-1. Partitioning based on the event key (such as the customer ID for a stream of customer payments), where events with the same key are stored in the same partition
-2. Round-robin partitioning, which provides an even distribution of events per partition
-3. Custom partitioning algorithms, tailored to specific use cases
+1. 基于事件键的分区（如客户支付流的客户ID），其中具有相同键的事件存储在同一分区中
+2. 轮询分区，为每个分区提供事件的均匀分布
+3. 为特定用例定制的自定义分区算法
 
-In a Kafka-based technology, such as a [Kafka Streams application](https://docs.confluent.io/platform/current/streams/index.html) or [Apache Flink®](https://flink.apache.org/) using one of its Kafka connectors, the processors can scale by working on a set of partitions concurrently and in a distributed manner. If an event stream's key content changes because of how the query is processing the rows -- for example, to execute a join in Kafka Streams between two streams of events -- the underlying keys are recalculated, and the events are sent to a new partition in the new topic to perform the computation. (This internal operation is often called _distributed data shuffling_.)
+在基于Kafka的技术中，如[Kafka Streams应用程序](https://docs.confluent.io/platform/current/streams/index.html)或使用其Kafka连接器之一的[Apache Flink®](https://flink.apache.org/)，处理器可以通过并发和分布式方式处理一组分区来扩展。如果事件流的键内容由于查询处理行的方式而改变——例如，在Kafka Streams中执行两个事件流之间的连接——底层键被重新计算，事件被发送到新主题中的新分区以执行计算。（这种内部操作通常称为_分布式数据洗牌_。）
 
-## Considerations
-In general, a higher number of stream partitions results in higher throughput. To maximize throughput, you need enough partitions to utilize all distributed instances of an [Event Processor](../event-processing/event-processor.md) (for example, Kafka Streams application instances).
-Be sure to choose the partition count carefully based on the throughput of [Event Sources](../event-source/event-source.md) (such as Kafka producers, including connectors), [Event Processors](../event-processing/event-processor.md) (such as Kafka Streams or Flink applications), and [Event Sinks](../event-sink/event-sink.md) (such as Kafka consumers, including connectors). Also be sure to benchmark performance in the environment.
-Plan the design of data patterns and key assignments so that events are distributed as evenly as possible across the stream partitions.
-This will prevent certain stream partitions from being overloaded relative to other stream partitions. See the blog post [Streams and Tables in Apache Kafka: Elasticity, Fault Tolerance, and Other Advanced Concepts](https://www.confluent.io/blog/kafka-streams-tables-part-4-elasticity-fault-tolerance-advanced-concepts/) to learn more about partitions and dealing with partition skew.
+## 注意事项
 
-## References
-* The blog post [How to choose the number of topics/partitions in a Kafka cluster?](https://www.confluent.io/blog/how-choose-number-topics-partitions-kafka-cluster) provides helpful guidance for selecting partition counts for your topics.
-* For a processing parallelism approach that subdivides the unit of work from a partition down to an event or event key, see the [Confluent Parallel Consumer for Kafka](https://github.com/confluentinc/parallel-consumer).
+一般来说，更多的流分区导致更高的吞吐量。为了最大化吞吐量，您需要足够的分区来利用[事件处理器](../event-processing/event-processor.md)的所有分布式实例（例如，Kafka Streams应用程序实例）。
+请确保根据[事件源](../event-source/event-source.md)（如Kafka生产者，包括连接器）、[事件处理器](../event-processing/event-processor.md)（如Kafka Streams或Flink应用程序）和[事件接收器](../event-sink/event-sink.md)（如Kafka消费者，包括连接器）的吞吐量仔细选择分区数量。还要确保在环境中进行性能基准测试。
+规划数据模式和键分配的设计，以便事件在流分区中尽可能均匀分布。
+这将防止某些流分区相对于其他流分区过载。请参阅博客文章[Apache Kafka中的流和表：弹性、容错和其他高级概念](https://www.confluent.io/blog/kafka-streams-tables-part-4-elasticity-fault-tolerance-advanced-concepts/)以了解更多关于分区和处理分区倾斜的信息。
+
+## 参考资料
+
+* 博客文章[如何在Kafka集群中选择主题/分区数量？](https://www.confluent.io/blog/how-choose-number-topics-partitions-kafka-cluster)为选择主题的分区数量提供了有用的指导。
+* 对于将工作单元从分区细分到事件或事件键的处理并行性方法，请参阅[Confluent Kafka并行消费者](https://github.com/confluentinc/parallel-consumer)。

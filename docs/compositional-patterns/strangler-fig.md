@@ -1,39 +1,80 @@
 ---
 seo:
-  title: Strangler Fig
-  description: Migrate from a monolithic application architecture to microservices in a controlled, step-by-step fashion using CDC and event streams.
+  title: 绞杀
+  description: 通过逐步替换旧系统的功能来迁移单体应用程序。
 ---
 
-# Strangler Fig
-Move functionality from a montolithic application to microservices gradually until the monolith is no longer being used and can be shut down.
+# 绞杀
 
-## Problem
-How can we migrate a monolithic application to a microservices architecture without the risks associated with a large cut-over rewrite?
+绞杀模式是一种用于将单体应用程序迁移到微服务架构的策略。它通过逐步替换旧系统的功能来实现这一点，而不是一次性重写整个应用程序。
 
-## Solution
+## 问题
 
-We can use the Strangler Fig pattern to migrate from a monolith to microservices safely and gradually.
+如何在不中断服务的情况下将单体应用程序迁移到微服务架构？
 
-## Implementation
-
-First we identify a module of the monolith, or a set of existing APIs that will be replaced by our first microservice. We'll call this module A. Then we can use change data capture (CDC) to convert any changes to module A's data to an [Event Stream](../event-stream/event-stream.md) that will feed our microservice. 
-
-Then we will place a proxy between the monolith and any clients, with all read calls to module A being routed to our microservice. 
+## 解决方案
 ![strangler-fig](../img/strangler-fig-a.svg)
 
-When our microservice is ready to handle writes, we can change the proxy to route all module A's writes as well.  At this point, we can, again, use CDC to stream changes back to our monolith so it doesn't know what it's missing. 
-![strangler-fig](../img/strangler-fig-b.svg)
+绞杀模式通过以下步骤实现迁移：
 
-As we continue this process with more modules, we gradually replace the functionality of the monolith until it can be shut down safely. 
+1. **识别功能边界**：将单体应用程序分解为逻辑功能模块
+2. **逐步替换**：一次替换一个功能模块，而不是整个应用程序
+3. **并行运行**：在迁移期间，新旧系统并行运行
+4. **流量路由**：使用路由机制将流量从旧系统逐步转移到新系统
+5. **验证和监控**：确保新系统按预期工作，然后完全移除旧功能
 
-## Considerations
+## 实现
 
-The [Event Streams](../event-stream/event-stream.md) that we create using CDC are not only there for feeding the microservices, but are also available to be used by other applications. So that the Strangler Fig pattern is not only helpful in replacing legacy application, but can be used to gradually transform our enterprise architecture to an [Event Streaming Platform]()
+绞杀模式可以使用[事件流平台](../event-stream/event-streaming-platform.md)来实现，特别是通过[变更数据捕获](../event-source/database-write-through.md)来同步新旧系统之间的数据。
 
+### 使用Kafka Connect进行数据同步
 
-## References
+```json
+{
+  "name": "legacy-db-connector",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+    "tasks.max": "1",
+    "connection.url": "jdbc:mysql://legacy-db:3306/monolith",
+    "mode": "incrementing",
+    "incrementing.column.name": "id",
+    "topic.prefix": "legacy-",
+    "poll.interval.ms": "5000"
+  }
+}
+```
 
-This pattern was originally articulated by Martin Fowler in his post: [Strangler Fig Application](https://martinfowler.com/bliki/StranglerFigApplication.html).  There is also a good representation of it among [Microsoft's Cloud Design Patterns](https://docs.microsoft.com/en-us/azure/architecture/patterns/strangler-fig). Gunnar Morling and Hans-Peter Grahsl demonstrate this pattern in a [presentation from Kafka Summit Europe 2021](https://www.confluent.io/events/kafka-summit-europe-2021/advanced-change-data-streaming-patterns-in-distributed-systems/).
+### 使用事件流进行功能路由
 
+```java
+// 路由逻辑示例
+public class StranglerFigRouter {
+    
+    public void routeRequest(Request request) {
+        if (isFeatureMigrated(request.getFeature())) {
+            // 路由到新的微服务
+            routeToNewService(request);
+        } else {
+            // 路由到旧系统
+            routeToLegacySystem(request);
+        }
+    }
+    
+    private boolean isFeatureMigrated(String feature) {
+        // 检查功能是否已迁移到新系统
+        return migratedFeatures.contains(feature);
+    }
+}
+```
 
+## 注意事项
 
+* **数据一致性**：确保新旧系统之间的数据同步和一致性
+* **回滚策略**：准备回滚机制以应对新系统的问题
+* **监控和观察**：密切监控迁移过程中的系统性能和错误
+* **团队协调**：确保开发团队之间的良好协调和沟通
+* **测试策略**：实施全面的测试策略，包括集成测试和端到端测试
+
+## 参考资料
+
+此模式由Martin Fowler在[绞杀模式](https://martinfowler.com/bliki/StranglerFigApplication.html)中首次描述。它基于绞杀者无花果植物的生长方式，这种植物逐渐包围并最终取代宿主树。

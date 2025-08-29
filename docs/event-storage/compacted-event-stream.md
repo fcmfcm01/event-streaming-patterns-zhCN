@@ -1,33 +1,30 @@
 ---
 seo:
-  title: Compacted Event Stream
-  description: Compacted Event Streams remove events from the event stream that represent outdated information and have been superseded by new events
+  title: 压缩事件流
+  description: 压缩事件流从事件流中删除表示过时信息并被新事件取代的事件
 ---
 
-# Compacted Event Stream
+# 压缩事件流
 
-[Event Streams](../event-stream/event-stream.md) often represent keyed snapshots of state, similar to a [Table](../table/state-table.md) in a relational database. That is, the [Events](../event/event.md) contain a primary key (identifier) and data that represents the latest information of the business entity related to the Event, such as the latest balance per customer account. [Event Processing Applications](../event-processing/event-processing-application.md) will need to process these Events to determine the current state of the business entity. However, processing the entire Event Stream history is often not practical.
+[事件流](../event-stream/event-stream.md)通常表示状态的键控快照，类似于关系数据库中的[表](../table/state-table.md)。也就是说，[事件](../event/event.md)包含主键（标识符）和表示与事件相关的业务实体的最新信息的数据，例如每个客户账户的最新余额。[事件处理应用程序](../event-processing/event-processing-application.md)需要处理这些事件以确定业务实体的当前状态。但是，处理整个事件流历史通常不实用。
 
+## 问题
 
-## Problem
+如何将（键控的）[表](../table/state-table.md)永久存储在[事件流](../event-stream/event-stream.md)中，使用最少的空间？
 
-How can a (keyed) [Table](../table/state-table.md) be stored in an [Event Stream](../event-stream/event-stream.md) forever, using the minimum amount of space?
-
-
-## Solution
+## 解决方案
 
 ![compacted-event-stream](../img/compacted-event-stream.svg)
 
-Remove events from the stream that represent outdated information and have been superseded by new events. The table's current data (i.e., its latest state) is represented by the remaining events in the stream.
+从流中删除表示过时信息并被新事件取代的事件。表的当前数据（即其最新状态）由流中的剩余事件表示。
 
-This approach bounds the storage space of the table's event stream to `Θ(number of unique keys currently in table)`, rather than `Θ(total number of change events for table)`. In practice, the number of unique keys (e.g., unique customer IDs) is typically much smaller than the number of table changes (e.g., total number of changes across all customer profiles). A compacted event stream thus reduces the storage space significantly in most cases.
+这种方法将表的事件流的存储空间限制为`Θ(表中当前唯一键的数量)`，而不是`Θ(表变更事件的总数)`。在实践中，唯一键的数量（例如，唯一客户ID）通常比表变更的数量（例如，所有客户配置文件变更的总数）小得多。因此，压缩事件流在大多数情况下显著减少了存储空间。
 
+## 实现
 
-## Implementation
+Apache Kafka®通过其[主题压缩](https://kafka.apache.org/documentation/#compaction)功能原生提供此功能。定期扫描流（Kafka中的主题）以删除已被具有相同键（如相同客户ID）的较新事件取代的任何旧事件。请注意，压缩是Kafka中的异步过程，因此压缩流可能包含一些被取代的事件，这些事件正在等待被压缩掉。
 
-Apache Kafka® provides this functionality natively through its [Topic Compaction](https://kafka.apache.org/documentation/#compaction) feature. A stream (topic in Kafka) is scanned periodically to remove any old events that have been superseded by newer events that have the same key, such as as the same customer ID. Note that compaction is an asynchronous process in Kafka, so a compacted stream may contain some superseded events, which are waiting to be compacted away.
-
-To create a compacted event stream called `customer-profiles` with Kafka:
+要使用Kafka创建名为`customer-profiles`的压缩事件流：
 
 ```bash
 $ kafka-topics --create \
@@ -40,7 +37,7 @@ $ kafka-topics --create \
 Created topic customer-profiles.
 ```
 
-The `kafka-topics` command can also verify the current topic's configuration:
+`kafka-topics`命令还可以验证当前主题的配置：
 
 ```bash
 $ kafka-topics --bootstrap-server localhost:9092 --topic customer-profiles --describe
@@ -51,19 +48,17 @@ Topic: customer-profiles       PartitionCount: 3       ReplicationFactor: 1    C
         Topic: customer-profiles       Partition: 2    Leader: 0       Replicas: 0     Isr: 0  Offline:
 ```
 
+## 注意事项
 
-## Considerations
+压缩事件流允许一些优化：
 
-Compacted event streams allow for some optimizations:
+* 首先，它们允许[事件流平台](../event-stream/event-streaming-platform.md)以数据特定的方式限制流的存储增长，而不是在预配置的时间段后普遍删除事件。
+* 其次，拥有较小的流允许更快的恢复和系统迁移策略。
 
-* First, they allow the [Event Streaming Platform](../event-stream/event-streaming-platform.md) to limit the storage growth of the stream in a data-specific way, rather than removing events universally after a pre-configured period of time.
-* Second, having smaller streams allows for faster recovery and system migration strategies.
+重要的是要理解，压缩故意通过删除如上定义的被取代事件来从事件流中删除历史数据。然而，在许多用例中，历史数据不应该被删除，例如对于金融交易流，其中每笔交易都需要被记录和存储。在这里，如果流存储是主要关注点，请使用[无限保留事件流](infinite-retention-event-stream.md)而不是压缩流。
 
-It is important to understand that compaction, on purpose, removes historical data from an event stream by removing superseded events as defined above. In many use cases, however, historical data should not be removed, such as for a stream of financial transactions, where every single transaction needs to be recorded and stored. Here, if the storage of the stream is the primary concern, use an [Infinite Retention Event Stream](infinite-retention-event-stream.md) instead of a compacted stream.
+## 参考资料
 
-
-## References
-
-* Compacted event streams are highly related to the [State Table](../table/state-table.md) pattern.
-* Compacted event streams work a bit like simple [Log Structured Merge Trees](http://www.benstopford.com/2015/02/14/log-structured-merge-trees/).
-* [Cleanup policy configuration](https://docs.confluent.io/platform/current/installation/configuration/topic-configs.html#topicconfigs_cleanup.policy) of Kafka topics.
+* 压缩事件流与[状态表](../table/state-table.md)模式高度相关。
+* 压缩事件流的工作方式有点像简单的[日志结构化合并树](http://www.benstopford.com/2015/02/14/log-structured-merge-trees/)。
+* Kafka主题的[清理策略配置](https://docs.confluent.io/platform/current/installation/configuration/topic-configs.html#topicconfigs_cleanup.policy)。

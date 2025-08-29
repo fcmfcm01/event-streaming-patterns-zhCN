@@ -1,54 +1,59 @@
 ---
 seo:
-  title: Limited Retention Event Stream
-  description: Limited Retention Event Streams allow outdated or otherwise undesired events to be removed from an Event Stream.
+  title: 有限保留事件流
+  description: 有限保留事件流允许从事件流中删除过时或其他不需要的事件。
 ---
 
-# Limited Retention Event Stream
-Many use cases allow for [Events](../event/event.md) to be removed from an [Event Stream](../event-stream/event-stream.md) in order to preserve space and prevent the reading of stale data.
+# 有限保留事件流
 
-## Problem
-How can we remove events from an Event Stream based on a criteria, such as event age or Event Stream size?
+许多用例允许从[事件流](../event-stream/event-stream.md)中删除[事件](../event/event.md)，以节省空间并防止读取过时数据。
 
-## Solution
+## 问题
+
+我们如何根据标准（如事件年龄或事件流大小）从事件流中删除事件？
+
+## 解决方案
 ![limited-retention-event-stream](../img/limited-retention-event-stream.svg)
 
-The solution for limited retention will depend on the [Event Streaming Platform](../event-stream/event-streaming-platform.md). Most platforms will allow for deletion of events using an API or with an automated process configured within the platform itself. Because Event Streams are modeled as immutable event logs in the [Event Store](../event-storage/event-store.md), events will be removed from the beginning of an Event Stream moving forward (i.e., oldest events are being removed first). [Event Processing Applications](../event-processing/event-processing-application.md) that are reading from the stream will not be given the deleted events.
+有限保留的解决方案将取决于[事件流平台](../event-stream/event-streaming-platform.md)。大多数平台将允许使用API或在平台本身内配置的自动化过程删除事件。由于事件流在[事件存储](../event-storage/event-store.md)中被建模为不可变事件日志，事件将从事件流的开头开始被删除（即，最旧的事件首先被删除）。从流中读取的[事件处理应用程序](../event-processing/event-processing-application.md)将不会收到已删除的事件。
 
-## Implementation
-Apache Kafka® implements a Limited Retention Event Stream by default. With Kafka, Event Streams are modeled as [Topics](https://docs.confluent.io/platform/current/kafka/introduction.html#main-concepts-and-terminology). Kafka provides two types of retention policy, which can be configured on a per-topic basis or as a default for new topics.
+## 实现
 
-### Time-Based Retention
-With time-based retention, events will be removed from the topic after the event timestamp indicates an event is older than the configured log retention time. On Kafka this is configured with the `log.retention.hours` setting, which can be set as a default to apply to all topics or on a per-topic basis. Additionally, Kafka respects a `log.retention.minutes` and `log.retention.ms` settings to define shorter retention periods.
+Apache Kafka®默认实现有限保留事件流。使用Kafka，事件流被建模为[主题](https://docs.confluent.io/platform/current/kafka/introduction.html#main-concepts-and-terminology)。Kafka提供两种类型的保留策略，可以按主题配置或作为新主题的默认配置。
 
-The following example sets the retention period of a topic to one year: 
+### 基于时间的保留
+
+使用基于时间的保留，当事件时间戳指示事件比配置的日志保留时间更旧时，事件将从主题中删除。在Kafka上，这通过`log.retention.hours`设置配置，可以设置为默认值以应用于所有主题或按主题设置。此外，Kafka尊重`log.retention.minutes`和`log.retention.ms`设置来定义更短的保留期。
+
+以下示例将主题的保留期设置为一年：
 
 ```bash
 log.retention.hours=8760
 ```
 
-For more guidance and configuring time-based data retention, see the [Kafka Broker Configurations documentation](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html) for default settings, or the [Modifying Topics](https://docs.confluent.io/platform/current/kafka/post-deployment.html#modifying-topics) section for modifying existing topics.
+有关基于时间的数据保留的更多指导和配置，请参阅[Kafka代理配置文档](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)了解默认设置，或[修改主题](https://docs.confluent.io/platform/current/kafka/post-deployment.html#modifying-topics)部分了解修改现有主题。
 
-### Size-Based Retention
-With size-based retention, events will begin to be removed from the topic once the total size of the topic violates the configured maximum size. Kafka supports a `log.retention.bytes` configure. For example, to configure the maximum size of a topic to 100GB you could set the configuration as follows: 
- 
+### 基于大小的保留
+
+使用基于大小的保留，一旦主题的总大小违反配置的最大大小，事件将开始从主题中删除。Kafka支持`log.retention.bytes`配置。例如，要将主题的最大大小配置为100GB，您可以按如下方式设置配置：
+
 ```bash
 log.retention.bytes=107374127424
 ```
 
-For more guidance and configuring size-based data retention, see the [Kafka Broker Configurations documentation](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html) for default settings, or the [Modifying Topics](https://docs.confluent.io/platform/current/kafka/post-deployment.html#modifying-topics) section for modifying existing topics.
+有关基于大小的数据保留的更多指导和配置，请参阅[Kafka代理配置文档](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)了解默认设置，或[修改主题](https://docs.confluent.io/platform/current/kafka/post-deployment.html#modifying-topics)部分了解修改现有主题。
 
+### 事件如何从事件流中删除
 
-### How Events Are Being Removed From an Event Stream
+对于配置保留的任一方法，Kafka在事件违反配置的保留设置时_不会立即_逐个删除事件。要了解它们如何被删除，我们首先需要解释Kafka主题进一步分解为_主题分区_（请参阅[分区并行性](../event-stream/partitioned-parallelism.md)）。分区本身进一步分为称为_段_的文件。段表示特定分区中事件的序列，一旦违反保留策略，这些段就会被删除。我们可以通过`log.retention.check.interval.ms`和段配置（如`log.segment.bytes`）等附加设置进一步微调删除算法。
 
-For either method of configuring retention, Kafka _does not immediately_ remove events one by one when they violate the configured retention settings. To understand how they are removed, we first need to explain that Kafka topics are further broken down into _topic partitions_ (see [Partitioned Placement](../event-stream/partitioned-parallelism.md)). Partitions themselves are further divided into files called _segments_. Segments represent a sequence of the events in a particular partition, and these segments are what is being removed once a violation of the retention policy has occurred. We can further fine-tune the removal algorithm with additional settings such as `log.retention.check.interval.ms` and segment configuration, such as `log.segment.bytes`. 
+## 注意事项
 
+* 在配置具有有限保留的事件流时，我们应该考虑故障场景。我们的应用程序应该有足够的时间在事件被删除之前读取和处理事件，这意味着配置的保留必须覆盖我们的应用程序可能经历的潜在中断的时间框架。例如，如果运营团队对非关键Kafka用例有2个工作日（周一到周五）的SLA，那么保留应该设置为至少4天，以覆盖在周末之前或期间发生的事件。
+* 类似地，如果我们想允许应用程序多次重新处理相同的事件（通常称为_重新处理历史数据_的能力）用于A/B测试或机器学习等用例，那么我们必须相应地增加保留设置。这就是为什么在实践中通常配置具有长保留期（数月或数年）的Kafka主题的原因。
 
-## Considerations
-* We should account for failure scenarios when configuring event streams with limited retention. Our applications should have enough time to read and process events before they are being removed, which means the configured retention must cover the time frames of potential outages experienced by our applications. For example, if an Operations team has an SLA of 2 business days (Mon to Fri) for a non-mission-critical Kafka use case, then retention should be set to at least 4 days to cover for incidents that happen right before or during the weekends.
-* Similarly, if we want to allow applications to reprocess the same events multiple times (often called the ability to _reprocess historical data_) for use cases such as A/B testing or machine learning, then we must increase the retention settings accordingly. That's why it is common in practice to configure Kafka topics with long retention periods (months or years).
+## 参考资料
 
-## References
-* This pattern is similar to [Message Expiration](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageExpiration.html) in Enterprise Integration Patterns by Gregor Hohpe and Bobby Woolf
-* [Apache Kafka 101: Introduction](/learn-kafka/apache-kafka/events/) provides a primer on "What is Kafka, and how does it work?"
-* A related pattern is the [Infinite Retention Event Stream](infinite-retention-event-stream.md) pattern which details Event Streams that stores events indefinitely.
+* 此模式类似于Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息过期](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageExpiration.html)
+* [Apache Kafka 101：介绍](/learn-kafka/apache-kafka/events/)提供了"什么是Kafka，它是如何工作的？"的入门
+* 相关模式是[无限保留事件流](infinite-retention-event-stream.md)模式，它详细说明了无限期存储事件的事件流。

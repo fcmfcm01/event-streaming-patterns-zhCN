@@ -1,28 +1,27 @@
 ---
 seo:
-  title: Event Aggregator
-  description: Perform an aggregation across multiple related events to produce a new event.
+  title: 事件聚合器
+  description: 对多个相关事件执行聚合以产生新事件。
 ---
-# Event Aggregator
 
-Combining multiple events into a single encompassing event—e.g., to compute totals, averages, etc.—is a common task in event streaming and streaming analytics.
+# 事件聚合器
 
+将多个事件组合成单个包含事件——例如，计算总数、平均值等——是事件流和流分析中的常见任务。
 
-## Problem
+## 问题
 
-How can multiple related events be aggregated to produce a new event?
+如何聚合多个相关事件以产生新事件？
 
-## Solution
+## 解决方案
 
-We use an [Event Grouper](../stream-processing/event-grouper.md) followed by an event aggregator. The grouper prepares the input events as needed for the subsequent aggregation step, e.g. by grouping the events based on the data field by which the aggregation is computed (such as a customer ID) and/or by grouping the events into time windows (such as 5-minute windows). The aggregator then computes the desired aggregation for each group of events, e.g., by computing the average or sum of each 5-minute window.
+我们使用[事件分组器](../stream-processing/event-grouper.md)后跟事件聚合器。分组器根据需要为后续聚合步骤准备输入事件，例如，通过基于计算聚合的数据字段（如客户ID）对事件进行分组和/或通过将事件分组到时间窗口（如5分钟窗口）中。然后聚合器为每组事件计算所需的聚合，例如，通过计算每个5分钟窗口的平均值或总和。
 
-
-## Implementation
+## 实现
 ![event-aggregator](../img/event-aggregator.svg)
 
-For example, we can use [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) and Apache Kafka® to perform an aggregation.
+例如，我们可以使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)和Apache Kafka®来执行聚合。
 
-Assuming that we have a Flink SQL table called `orders` based on an existing Kafka topic:
+假设我们有一个基于现有Kafka主题的名为`orders`的Flink SQL表：
 
 ```sql
 CREATE TABLE orders (
@@ -34,7 +33,7 @@ CREATE TABLE orders (
 );
 ```
 
-Then we'll create a derived table containing the aggregated events from that stream. In this case, we create a table called `item_stats` that represents per-item order statistics over 1-hour windows:
+然后我们将创建一个包含来自该流的聚合事件的派生表。在这种情况下，我们创建一个名为`item_stats`的表，表示1小时窗口内每个项目的订单统计：
 
 ```sql
 CREATE TABLE item_stats AS
@@ -47,21 +46,17 @@ CREATE TABLE item_stats AS
   GROUP BY item_id, window_start, window_end;
 ```
 
-This table will be continuously updated whenever new events arrive in the `orders` table.
+每当新事件到达`orders`表时，此表将持续更新。
 
+## 注意事项
 
-## Considerations
+* 在事件流中，一个关键技术挑战是——除了少数例外——通常不可能判断输入数据在给定时间点是否"完整"。因此，像Apache Kafka的Kafka Streams客户端库这样的流处理技术采用诸如_松弛时间_<sup>1</sup>和_宽限期_等技术（例如，参见Kafka Streams [`ofSizeAndGrace`](https://kafka.apache.org/38/javadoc/org/apache/kafka/streams/kstream/TimeWindows.html#ofSizeAndGrace(java.time.Duration,java.time.Duration))方法用于在窗口操作中指定宽限期）。Apache Flink®水印和关联的水印策略定义了截止点，之后[事件处理器](../event-processing/event-processor.md)将从其处理中丢弃任何延迟到达的输入事件，例如，参见延迟水印策略Flink SQL示例[这里](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/concepts/time_attributes/)。有关更多信息，请参阅[抑制事件聚合器](../stream-processing/suppressed-event-aggregator.md)模式。
 
-* In event streaming, a key technical challenge is that—with few exceptions—it is generally not possible to tell whether the input data is "complete" at a given point in time. For this reason, stream processing technologies such as the Kafka Streams client library of Apache Kafka employ techniques such as _slack time_<sup>1</sup> and _grace periods_ (e.g., see the Kafka Streams [`ofSizeAndGrace`](https://kafka.apache.org/38/javadoc/org/apache/kafka/streams/kstream/TimeWindows.html#ofSizeAndGrace(java.time.Duration,java.time.Duration)) method for specifying a grace period in windowing operations). Apache Flink® watermarks and associated watermark strategies define cutoff points after which an [Event Processor](../event-processing/event-processor.md) will discard any late-arriving input events from its processing, e.g, see the delayed watermark strategy Flink SQL examples [here](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/concepts/time_attributes/). See the [Suppressed Event Aggregator](../stream-processing/suppressed-event-aggregator.md) pattern for additional information.
+## 参考资料
 
+* 相关模式：[抑制事件聚合器](../stream-processing/suppressed-event-aggregator.md)
+* 事件聚合的更详细示例可以在以下教程中看到：[如何使用Kafka Streams计算事件流](https://developer.confluent.io/confluent-tutorials/aggregating-count/kstreams/)和[如何使用Flink SQL计算事件流](https://developer.confluent.io/confluent-tutorials/aggregating-count/flinksql/)。
 
-## References
+## 脚注
 
-* Related patterns: [Suppressed Event Aggregator](../stream-processing/suppressed-event-aggregator.md)
-* More detailed examples of event aggregation can be seen in the following tutorials:
-  [How to count a stream of events with Kafka Streams](https://developer.confluent.io/confluent-tutorials/aggregating-count/kstreams/) and [How to count a stream of events with Flink SQL](https://developer.confluent.io/confluent-tutorials/aggregating-count/flinksql/).
-
-
-## Footnotes
-
-<sup>1</sup>Slack time: [Beyond Analytics: The Evolution of Stream Processing Systems (SIGMOD 2020)](https://dl.acm.org/doi/abs/10.1145/3318464.3383131), [Aurora: a new model and architecture for data stream management (VLDB Journal 2003)](https://dl.acm.org/doi/10.1007/s00778-003-0095-z)
+<sup>1</sup>松弛时间：[超越分析：流处理系统的演变（SIGMOD 2020）](https://dl.acm.org/doi/abs/10.1145/3318464.3383131)，[Aurora：数据流管理的新模型和架构（VLDB Journal 2003）](https://dl.acm.org/doi/10.1007/s00778-003-0095-z)

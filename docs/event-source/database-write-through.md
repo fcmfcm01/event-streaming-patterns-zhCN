@@ -1,22 +1,25 @@
 ---
 seo:
-  title: Database Write Through
-  description: Update a value in a database and create an associated event with at-least-once guarantees.
+  title: 数据库直写
+  description: 更新数据库中的值并创建具有至少一次保证的关联事件。
 ---
 
-# Database Write Through
-For architectural or legacy purposes, data-centric applications may write directly to a database. [Event Processing Applications](../event-processing/event-processing-application.md) will need to reliably consume data from these systems using [Events](../event/event.md) on [Event Streams](../event-stream/event-stream.md).
+# 数据库直写
 
-## Problem
-How do we update a value in a database and create an associated [Event](../event/event.md) with at-least-once guarantees?
+出于架构或遗留目的，以数据为中心的应用程序可能直接写入数据库。[事件处理应用程序](../event-processing/event-processing-application.md)需要使用[事件流](../event-stream/event-stream.md)上的[事件](../event/event.md)可靠地从这些系统消费数据。
 
-## Solution
+## 问题
+
+我们如何更新数据库中的值并创建具有至少一次保证的关联[事件](../event/event.md)？
+
+## 解决方案
 ![db-write-through](../img/db-write-through.svg)
 
-Some applications write directly to a database table, therefore the database table is the [Event Source](event-source.md). We can deploy a Change Data Capture (CDC) solution to continuously capture writes (inserts, updates, deletes) to that database table and produce them as [Events](../event/event.md) onto an [Event Stream](../event-stream/event-stream.md).  The events in stream can then be consumed by [Event Processing Applications](../event-processing/event-processing-application.md). Additionally, the [Event Stream](../event-stream/event-stream.md) can be read into a Projection Table, for example with [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/), so that it can be queried by other applications.
+一些应用程序直接写入数据库表，因此数据库表是[事件源](event-source.md)。我们可以部署变更数据捕获（CDC）解决方案来持续捕获对该数据库表的写入（插入、更新、删除）并将它们作为[事件](../event/event.md)产生到[事件流](../event-stream/event-stream.md)上。然后流中的事件可以被[事件处理应用程序](../event-processing/event-processing-application.md)消费。此外，[事件流](../event-stream/event-stream.md)可以读入投影表，例如使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)，以便其他应用程序可以查询它。
 
-## Implementation
-[Kafka connectors](https://docs.confluent.io/platform/current/connect/index.html) provide the ability to scalably and reliably move data between Apache Kafka® and other data systems. There are many types of connectors that can connect to many types of databases.  For example, using the [JDBC Source connector](https://docs.confluent.io/kafka-connect-jdbc/current/source-connector/index.html) for Kafka Connect allows for streaming of changes from a source database to Kafka topics.
+## 实现
+
+[Kafka连接器](https://docs.confluent.io/platform/current/connect/index.html)提供了在Apache Kafka®和其他数据系统之间可扩展且可靠地移动数据的能力。有许多类型的连接器可以连接到许多类型的数据库。例如，使用Kafka Connect的[JDBC源连接器](https://docs.confluent.io/kafka-connect-jdbc/current/source-connector/index.html)允许将源数据库的变更流式传输到Kafka主题。
 
 ```bash
   {
@@ -37,24 +40,24 @@ Some applications write directly to a database table, therefore the database tab
   }
 ```
 
-The above shows an example configuration to deploy a MySQL Source CDC Connector (Debezium) streaming data from a MySQL database to Kafka topics. The configuration determines the database to connect to (`database.hostname`) along with the database elements to source into Kafka (`table.includelist`). The `output.data.format` configuration instructs Kafka Connect which format to use when writing records (in this case the Apache Avro format).
+上面显示了部署MySQL源CDC连接器（Debezium）将MySQL数据库的数据流式传输到Kafka主题的示例配置。配置确定要连接的数据库（`database.hostname`）以及要源入Kafka的数据库元素（`table.includelist`）。`output.data.format`配置指示Kafka Connect在写入记录时使用哪种格式（在这种情况下是Apache Avro格式）。
 
-[Confluent CLI](https://docs.confluent.io/confluent-cli/current/overview.html) can deploy a connector on the command line from a configuration, for example:
+[Confluent CLI](https://docs.confluent.io/confluent-cli/current/overview.html)可以从配置在命令行部署连接器，例如：
 ```bash
 confluent connect create --config <connector-config-file.json>
 ```
 
-## Considerations
-- This pattern is a specialization of the [Event Source Connector](event-source-connector.md) that guarantees that all state changes represented in an [Event Source](../event-source/event-source.md) are captured in an [Event Streaming Platform](../event-stream/event-streaming-platform.md).
-- The processing guarantees (cf. "Guaranteed Delivery") to choose from — e.g., at-least-once, exactly-once — for the CDC data flow depend on the CDC and Database technology utilized.
-- There is a certain delay until changes in the source database table are available in the CDC-ingested event stream. The amount of the delay depends on a variety of factors, including the features and configuration of the Event Source Connector. In many typical scenarios the delay is less than a few seconds.
-- [Events](../event/event.md) typically require the row key to be used as the Kafka event key (aka record/message key), which is the only way to ensure all [Events](../event/event.md) for the same DB table row go to the same Kafka topic-partition and are thus totally ordered. They also typically model deletes as tombstone events, i.e. an event with a non-null key and a null value. By ensuring totally ordered events for each row, consumers see an eventually-consistent representation of these events for each row.
+## 注意事项
 
-## References
-* See [Oracle CDC Source Connector](https://www.confluent.io/blog/introducing-confluent-oracle-cdc-connector/) for details of a premium CDC connector for Oracle DB.
-* See [Integrate External Systems to Kafka](https://docs.confluent.io/cloud/current/connectors/index.html) on Confluent documentation for information on source connectors.
-* [Kafka Connect Deep Dive - JDBC Source Connector](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/) blog post
-* See [Database Write Aside](database-write-aside.md) for an alternative example of writing database changes to an Event Stream
-* [No More Silos: Integrating Databases and Apache Kafka](https://rmoff.dev/no-more-silos) blog post by [Robin Moffatt](https://talks.rmoff.net/)
+- 此模式是[事件源连接器](event-source-connector.md)的特化，它保证[事件源](../event-source/event-source.md)中表示的所有状态变更都在[事件流平台](../event-stream/event-streaming-platform.md)中被捕获。
+- CDC数据流的处理保证（参见"保证交付"）选择——例如，至少一次、精确一次——取决于所使用的CDC和数据库技术。
+- 源数据库表中的变更在CDC摄取的事件流中可用之前有一定的延迟。延迟量取决于各种因素，包括事件源连接器的功能和配置。在许多典型场景中，延迟少于几秒钟。
+- [事件](../event/event.md)通常要求行键用作Kafka事件键（也称为记录/消息键），这是确保同一DB表行的所有[事件](../event/event.md)都进入同一Kafka主题分区的唯一方法，因此完全有序。它们通常还将删除建模为墓碑事件，即具有非空键和空值的事件。通过确保每行的完全有序事件，消费者看到每行这些事件的最终一致表示。
 
+## 参考资料
 
+* 有关Oracle DB的高级CDC连接器的详细信息，请参阅[Oracle CDC源连接器](https://www.confluent.io/blog/introducing-confluent-oracle-cdc-connector/)。
+* 有关源连接器的信息，请参阅Confluent文档上的[将外部系统集成到Kafka](https://docs.confluent.io/cloud/current/connectors/index.html)。
+* [Kafka Connect深度潜水 - JDBC源连接器](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/)博客文章
+* 有关将数据库变更写入事件流的替代示例，请参阅[数据库旁路写入](database-write-aside.md)
+* [Robin Moffatt](https://talks.rmoff.net/)的[不再有孤岛：集成数据库和Apache Kafka](https://rmoff.dev/no-more-silos)博客文章

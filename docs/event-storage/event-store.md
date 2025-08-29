@@ -1,79 +1,45 @@
 ---
 seo:
-  title: Event Store
-  description: Event streams, implemented as append-only logs, are the structure of choice for event storage and event-driven architectures.
+  title: 事件存储
+  description: 事件流，实现为仅追加日志，是事件存储和事件驱动架构的首选结构。
 ---
 
-# Event Store
+# 事件存储
 
-When considering an architecture based on an [Event Streaming Platform](../event-stream/event-streaming-platform.md), the first
-fundamental question is, "How do we store our events?" This isn't as
-obvious as it first sounds, as we have to consider persistence, query
-performance, write throughput, availability, auditing and many other
-concerns. This decision will affect all the ones that follow.
+当考虑基于[事件流平台](../event-stream/event-streaming-platform.md)的架构时，第一个基本问题是"我们如何存储事件？"这不像最初听起来那么明显，因为我们必须考虑持久性、查询性能、写入吞吐量、可用性、审计和许多其他关注点。这个决定将影响所有后续的决定。
 
-## Problem
+## 问题
 
-How can events be stored such that they form a reliable source of
-truth for applications?
+如何存储事件，使它们成为应用程序的可靠真相来源？
 
-## Solution
+## 解决方案
 ![event store](../img/event-store.svg)
 
-Incoming events are stored in an [Event Stream](../event-stream/event-stream.md),
-implemented as an append-only log. By choosing this data structure, we
-can guarantee constant-time (Θ(1)) writes, lock-free concurrent reads,
-and straightforward replication across multiple machines.
+传入的事件存储在[事件流](../event-stream/event-stream.md)中，实现为仅追加日志。通过选择这种数据结构，我们可以保证恒定时间（Θ(1)）写入、无锁并发读取，以及在多台机器上的直接复制。
 
-## Implementation
+## 实现
 
-Apache Kafka® is an event store that maintains a persistent,
-append-only stream — a _topic_ — for each kind of event we need to
-store. These topics are:
+Apache Kafka®是一个事件存储，为我们需要存储的每种事件维护一个持久的、仅追加的流——一个_主题_。这些主题是：
 
-* Write-efficient - an append-only log is one of the fastest, cheapest
-  data structures to write to.
-* Read efficient - multiple readers (cf. [Event Processor](../event-processing/event-processor.md)) can consume the same stream without
-  blocking.
-* Durable - all events are written to storage (e.g., local disk, network storage device), either synchronously (for
-  maximum reliability) or asynchronously (for maximum
-  throughput). Events can be as long-lived as needed, and even stored
-  forever.
-* Highly-available - each event is written to multiple storage devices and replicated across multiple machines, and in
-  the case of failure one of the redundant machines takes over.
-* Auditable - every change is captured and persisted. Every result can
-  be traced back to its source event(s).
+* 写入高效——仅追加日志是最快、最便宜的数据结构之一。
+* 读取高效——多个读取器（参见[事件处理器](../event-processing/event-processor.md)）可以消费同一流而不阻塞。
+* 持久——所有事件都写入存储（例如，本地磁盘、网络存储设备），要么同步（为了最大可靠性），要么异步（为了最大吞吐量）。事件可以根据需要长期存在，甚至可以永久存储。
+* 高可用——每个事件都写入多个存储设备并在多台机器上复制，在故障情况下，冗余机器之一接管。
+* 可审计——每个更改都被捕获和持久化。每个结果都可以追溯到其源事件。
 
-## Considerations
+## 注意事项
 
-It's worth briefly contrasting Apache Kafka® with message queues and
-relational databases.
+值得简要对比Apache Kafka®与消息队列和关系数据库。
 
-While queues also concern themselves with a stream of events, they
-often consider events as short-lived, independent messages. A
-message may only exist in memory, or it may be durable enough for data
-to survive server restarts, but in general they aren't intended to
-hold on to events for months or even years. Further, their querying
-capabilities may be limited to simple filtering, offloading more
-complex queries like joins and aggregations to the application level.
+虽然队列也关注事件流，但它们通常将事件视为短期的、独立的消息。消息可能只存在于内存中，或者它可能足够持久以使数据在服务器重启后存活，但通常它们不打算持有事件数月甚至数年。此外，它们的查询功能可能仅限于简单过滤，将连接和聚合等更复杂的查询卸载到应用程序级别。
 
-In contrast, relational databases are very good at maintaining a
-persistent state of the world in perpetuity, and answering arbitrary
-questions about it, but they often fall short on _auditing_ -
-answering which events led up to the current state - and on
-_liveness_ - what _new_ events do we need to consider.  They are
-predominantly designed for use cases that operate on data at rest,
-whereas an Event Store is designed from the ground up for data in
-motion and event streaming.
+相比之下，关系数据库非常擅长永久维护世界的持久状态，并回答关于它的任意问题，但它们通常在_审计_方面不足——回答哪些事件导致了当前状态——以及在_活跃性_方面——我们需要考虑哪些_新_事件。它们主要设计用于对静止数据进行操作的用例，而事件存储从头开始设计用于运动数据和事件流。
 
-By beginning with a fundamental data-structure for event capture, and
-building on that to provide long-term persistence and arbitrary
-analysis capabilities, Apache Kafka® provides an ideal choice of event
-store for modern, data-driven architectures.
+通过从事件捕获的基本数据结构开始，并在此基础上提供长期持久性和任意分析能力，Apache Kafka®为现代、数据驱动的架构提供了理想的事件存储选择。
 
-## References
+## 参考资料
 
-* See also: [Geo-Replication](../compositional-patterns/geo-replication.md).
-* [Using logs to build a solid data infrastructure](https://www.confluent.io/blog/using-logs-to-build-a-solid-data-infrastructure-or-why-dual-writes-are-a-bad-idea/)
-* [What Is Apache Kafka?](https://www.confluent.io/what-is-apache-kafka/)
-* [Kafka: The Definitive Guide](https://www.confluent.io/resources/kafka-the-definitive-guide/) free Ebook.
+* 另请参阅：[地理复制](../compositional-patterns/geo-replication.md)。
+* [使用日志构建坚实的数据基础设施](https://www.confluent.io/blog/using-logs-to-build-a-solid-data-infrastructure-or-why-dual-writes-are-a-bad-idea/)
+* [什么是Apache Kafka？](https://www.confluent.io/what-is-apache-kafka/)
+* [Kafka：权威指南](https://www.confluent.io/resources/kafka-the-definitive-guide/)免费电子书。

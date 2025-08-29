@@ -1,25 +1,25 @@
 ---
 seo:
-  title: Event
-  description: Events represent facts and are used by decoupled applications, services, and systems to exchange data across an Event Streaming Platform.
+  title: 事件
+  description: 事件表示事实，被解耦的应用程序、服务和系统用于在事件流平台上交换数据。
 ---
 
-# Event
-Events represent facts and are used by decoupled applications, services, and systems to exchange data across an [Event Streaming Platform](../event-stream/event-streaming-platform.md).
+# 事件
+事件表示事实，被解耦的应用程序、服务和系统用于在[事件流平台](../event-stream/event-streaming-platform.md)上交换数据。
 
-## Problem
-How do I represent a fact about something that has happened?
+## 问题
+如何表示已发生事情的事实？
 
-## Solution
+## 解决方案
 ![event](../img/event.svg)
-An event represents an immutable fact about something that happened. Examples of Events might be orders, payments, activities, or measurements. Events are produced to, stored in, and consumed from an [Event Stream](../event-stream/event-stream.md). An Event typically contains one or more data fields that describe the fact, as well as a timestamp that denotes when the Event was created by its [Event Source](../event-source/event-source.md). The Event may also contain various metadata, such as its source of origin (for example, the application or cloud service that created the event) and storage-level information (for example, its position in the event stream).
+事件表示已发生事情的不可变事实。事件的例子可能包括订单、支付、活动或测量数据。事件被生产到、存储在[事件流](../event-stream/event-stream.md)中，并从其中被消费。事件通常包含描述事实的一个或多个数据字段，以及表示事件被其[事件源](../event-source/event-source.md)创建时的时间戳。事件还可能包含各种元数据，如其来源（例如，创建事件的应用程序或云服务）和存储级信息（例如，其在事件流中的位置）。
 
-## Implementation
-In Apache Kafka®, Events are referred to as _records_. Records are modeled as a key / value pair with a timestamp and optional metadata (called headers). The _value_ of the record usually contains the representation of an application domain object or some form of raw message value, such as the output of a sensor or other metric reading. The record _key_ is useful for a few reasons, but critically, it is used by Kafka to determine how the data is partitioned within a stream, also called a _topic_ (for more details on partitioning, see [Partitioned Parallelism](../event-stream/partitioned-parallelism.md)). The _key_ is often best thought of as a categorization of the Event, like the identity of a particular user or connected device. Headers are a place for record metadata that can help to describe the Event data itself, and are themselves modeled as a _map_ of keys and values.
+## 实现
+在Apache Kafka®中，事件被称为_记录_。记录被建模为具有时间戳和可选元数据（称为头部）的键/值对。记录的_值_通常包含应用程序域对象的表示或某种形式的原始消息值，例如传感器的输出或其他指标读数。记录_键_有几个用途，但关键的是，Kafka使用它来确定数据如何在流中分区，也称为_主题_（有关分区的更多详细信息，请参阅[分区并行性](../event-stream/partitioned-parallelism.md)）。_键_通常最好被视为事件的分类，如特定用户或连接设备的身份。头部是记录元数据的位置，可以帮助描述事件数据本身，它们本身被建模为键和值的_映射_。
 
-Record keys, values, and headers are opaque data types, meaning that Kafka, by deliberate design to achieve its high scalability and performance, does not define a type interface for them: they are read, stored, and written by Kafka's server-side brokers as raw arrays of bytes. It is the responsibility of Kafka _client_ applications, such as [Apache Flink®](https://developer.confluent.io/courses/apache-flink/intro/) stream processing applications, or microservices implemented with the client libraries, such as [Kafka Streams](https://docs.confluent.io/platform/current/streams/index.html) or the [Kafka Go client](https://docs.confluent.io/kafka-clients/go/current/overview.html), to perform serialization and deserialization of the data within the record keys, values, and headers.
+记录键、值和头部是不透明的数据类型，这意味着Kafka为了达到其高可扩展性和性能，故意设计不为其定义类型接口：它们被Kafka的服务器端代理作为原始字节数组读取、存储和写入。Kafka_客户端_应用程序（如[Apache Flink®](https://developer.confluent.io/courses/apache-flink/intro/)流处理应用程序，或使用客户端库实现的微服务，如[Kafka Streams](https://docs.confluent.io/platform/current/streams/index.html)或[Kafka Go客户端](https://docs.confluent.io/kafka-clients/go/current/overview.html)）负责对记录键、值和头部中的数据进行序列化和反序列化。
 
-When using the Java client library, events are created using the `ProducerRecord` type and are sent to Kafka using the `KafkaProducer`. In this example, we have set the key and value types as strings, and we have added a header:
+当使用Java客户端库时，事件使用`ProducerRecord`类型创建，并使用`KafkaProducer`发送到Kafka。在此示例中，我们将键和值类型设置为字符串，并添加了一个头部：
 
 ```java
 ProducerRecord<String, String> producerRecord = new ProducerRecord<>(
@@ -32,13 +32,13 @@ producerRecord.headers()
 producer.send(producerRecord);
 ```
 
-## Considerations
-* To ensure that Events from an Event Source can be read correctly by an [Event Processor](../event-processing/event-processor.md), they are often created in reference to an Event schema. Event schemas are commonly defined in [Apache Avro](https://avro.apache.org/docs/current/spec.html), [Protocol Buffers](https://developers.google.com/protocol-buffers) (Protobuf), or [JSON Schema](https://json-schema.org/).
+## 注意事项
+* 为了确保来自事件源的事件能够被[事件处理器](../event-processing/event-processor.md)正确读取，它们通常参考事件模式创建。事件模式通常在[Apache Avro](https://avro.apache.org/docs/current/spec.html)、[Protocol Buffers](https://developers.google.com/protocol-buffers)（Protobuf）或[JSON Schema](https://json-schema.org/)中定义。
 
-* For cloud-based architectures, evaluate the use of [CloudEvents](https://cloudevents.io/). CloudEvents provide a standardized [Event Envelope](../event/event-envelope.md) that wraps an event, making common event properties such as source, type, time, and ID universally accessible, regardless of how the event itself was serialized.
+* 对于基于云的架构，评估[CloudEvents](https://cloudevents.io/)的使用。CloudEvents提供标准化的[事件信封](../event/event-envelope.md)，包装事件，使常见的事件属性（如源、类型、时间和ID）普遍可访问，无论事件本身如何序列化。
 
-* In certain scenarios, Events may represent commands (instructions, actions, and so on) that should be carried out by an Event Processor reading the events. See the [Command](../event/command.md) pattern for details.
+* 在某些场景中，事件可能表示应该由读取事件的事件处理器执行的命令（指令、操作等）。有关详细信息，请参阅[命令](../event/command.md)模式。
 
-## References
-* This pattern is derived in part from [Message](https://www.enterpriseintegrationpatterns.com/patterns/messaging/Message.html), [Event Message](https://www.enterpriseintegrationpatterns.com/patterns/messaging/EventMessage.html), and [Document Message](https://www.enterpriseintegrationpatterns.com/patterns/messaging/DocumentMessage.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
-* [Apache Kafka 101: Introduction](/learn-kafka/apache-kafka/events/) provides a primer on "What is Kafka, and how does it work?" including information on core concepts like Events
+## 参考资料
+* 此模式部分源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息](https://www.enterpriseintegrationpatterns.com/patterns/messaging/Message.html)、[事件消息](https://www.enterpriseintegrationpatterns.com/patterns/messaging/EventMessage.html)和[文档消息](https://www.enterpriseintegrationpatterns.com/patterns/messaging/DocumentMessage.html)。
+* [Apache Kafka 101: 介绍](/learn-kafka/apache-kafka/events/)提供了"什么是Kafka，它是如何工作的？"的入门知识，包括关于事件等核心概念的信息

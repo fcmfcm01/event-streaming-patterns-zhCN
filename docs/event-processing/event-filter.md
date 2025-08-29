@@ -1,21 +1,23 @@
 ---
 seo:
-  title: Event Filter
-  description: Event Filter allows Event Processing Applications to operate over a subset of the Events in an Event Stream.
+  title: 事件过滤器
+  description: 事件过滤器允许事件处理应用程序在事件流中的事件子集上操作。
 ---
 
-# Event Filter
-[Event Processing Applications](event-processing-application.md) may need to operate over a subset of [Events](../event/event.md) in an [Event Stream](../event-stream/event-stream.md).
+# 事件过滤器
 
-## Problem
-How can an application select only the relevant events (or discard uninteresting events) from an Event Stream?
+[事件处理应用程序](event-processing-application.md)可能需要在[事件流](../event-stream/event-stream.md)中的[事件](../event/event.md)子集上操作。
 
-## Solution
+## 问题
+
+应用程序如何从事件流中仅选择相关事件（或丢弃无趣的事件）？
+
+## 解决方案
 ![event-filter](../img/event-filter.svg)
 
-## Implementation
+## 实现
 
-As an example, [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) lets us create a filtered Event Stream using familiar SQL syntax:
+作为示例，[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)让我们使用熟悉的SQL语法创建过滤的事件流：
 
 ```sql
 CREATE TABLE payments_only AS
@@ -24,7 +26,7 @@ CREATE TABLE payments_only AS
       WHERE type = 'purchase';
 ```
 
-The [Kafka Streams](https://docs.confluent.io/platform/current/streams/index.html) client library of Apache Kafka® provides a `filter` operator in its DSL. This operator filters out events that do not match a given predicate:
+Apache Kafka®的[Kafka Streams](https://docs.confluent.io/platform/current/streams/index.html)客户端库在其DSL中提供了`filter`操作符。此操作符过滤掉不匹配给定谓词的事件：
 
 ```java
 builder
@@ -33,6 +35,7 @@ builder
   .to("payments-topic");
 ```
 
-## References
-* This pattern is derived from [Message Filter](https://www.enterpriseintegrationpatterns.com/patterns/messaging/Filter.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
-* See the tutorial [How to filter a stream of events with Apache Flink® SQL](https://developer.confluent.io/confluent-tutorials/filtering/flinksql/) for detailed examples of filtering event streams.
+## 参考资料
+
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息过滤器](https://www.enterpriseintegrationpatterns.com/patterns/messaging/Filter.html)。
+* 有关过滤事件流的详细示例，请参阅教程[如何使用Apache Flink® SQL过滤事件流](https://developer.confluent.io/confluent-tutorials/filtering/flinksql/)。

@@ -1,21 +1,21 @@
 ---
 seo:
-  title: Event Standardizer
-  description: An Event Standardizer converts events in multiple formats to a common format understood by a downstream event processor.
+  title: 事件标准化器
+  description: 事件标准化器将多种格式的事件转换为下游事件处理器理解的通用格式。
 ---
 
-# Event Standardizer
-In most businesses, a variety of traditional and [Event Processing Applications](../event-processing/event-processing-application.md) need to exchange [Events](../event/event.md) across [Event Streams](../event-stream/event-stream.md). Downstream Event Processing Applications will require standardized data formats in order to properly process these events. However, the reality of having many sources for these events often leads to a lack of such standards, or to different interpretations of the same standard.
+# 事件标准化器
+在大多数企业中，各种传统和[事件处理应用程序](../event-processing/event-processing-application.md)需要通过[事件流](../event-stream/event-stream.md)交换[事件](../event/event.md)。下游事件处理应用程序将需要标准化的数据格式以正确处理这些事件。然而，拥有这些事件的许多来源的现实往往导致缺乏此类标准，或对同一标准的不同解释。
 
-## Problem
-How can I process events that are semantically equivalent but arrive in different formats?
+## 问题
+我如何处理语义等效但以不同格式到达的事件？
 
-## Solution
+## 解决方案
 ![event-standardizer](../img/event-standardizer.svg)
-Source all of the input Event Streams into an Event Standardizer that passes events to a specialized [Event Translator](../event-processing/event-translator.md), which in turn converts the events into a common format understood by the downstream [Event Processors](../event-processing/event-processor.md).
+将所有输入事件流源到事件标准化器中，该标准化器将事件传递给专门的[事件转换器](../event-processing/event-translator.md)，后者又将事件转换为下游[事件处理器](../event-processing/event-processor.md)理解的通用格式。
 
-## Implementation
-As an example, we can use the [Kafka Streams client library](https://docs.confluent.io/platform/current/streams/index.html) of Apache Kafka® to build an Event Processing Application that reads from multiple input Event Streams and then maps the values to a new type. Specifically, we can use the `mapValues` function to translate each event type into the standard type expected on the output [Event Stream](../event-stream/event-stream.md).
+## 实现
+作为示例，我们可以使用Apache Kafka®的[Kafka Streams客户端库](https://docs.confluent.io/platform/current/streams/index.html)构建一个事件处理应用程序，该应用程序从多个输入事件流读取，然后将值映射到新类型。具体来说，我们可以使用`mapValues`函数将每种事件类型转换为输出[事件流](../event-stream/event-stream.md)上期望的标准类型。
 
 ```
 SpecificAvroSerde<SpecificRecord> inputValueSerde = constructSerde();
@@ -37,13 +37,12 @@ builder
   .to("my-standardized-output-stream", Produced.with(Serdes.String(), outputSerdeType));
 ```
 
-## Considerations
-* When possible, diverging data formats should be normalized "at the source". This data governance is often called "Schema on Write", and may be implemented using the [Schema Validator](../event-source/schema-validator.md) pattern. Enforcing schema validation prior to writing an event to the Event Stream allows consuming applications to delegate their data format validation logic to the schema validation layer.
-* Error handling should be considered in the design of the standardizer. Categories of errors may include serialization failures, unexpected or missing values, and unknown types (as in the example above). [Dead Letter Stream](../event-processing/dead-letter-stream.md) is one pattern commonly used to handle exceptional events in the Event Processing Application. 
+## 注意事项
+* 在可能的情况下，不同的数据格式应该"在源头"标准化。这种数据治理通常称为"写入时模式"，可以使用[模式验证器](../event-source/schema-validator.md)模式实施。在将事件写入事件流之前强制执行模式验证，允许消费应用程序将其数据格式验证逻辑委托给模式验证层。
+* 在标准化器设计中应考虑错误处理。错误类别可能包括序列化失败、意外或缺失值以及未知类型（如上述示例中所示）。[死信流](../event-processing/dead-letter-stream.md)是事件处理应用程序中处理异常事件的常用模式之一。
 
-
-## References
-* See also the [Stream Merger](../stream-processing/event-stream-merger.md) pattern, for unifying related streams _without_ changing their format.
-* This pattern is derived from [Normalizer](https://www.enterpriseintegrationpatterns.com/patterns/messaging/Normalizer.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
-* Kafka Streams [`map` stateless transformation](https://docs.confluent.io/platform/current/streams/developer-guide/dsl-api.html#creating-source-streams-from-ak) documentation
-* [Error Handling Patterns for Apache Kafka Applications](https://www.confluent.io/blog/error-handling-patterns-in-kafka/) is a blog post with details on strategies and patterns for error handling in [Event Processing Applications](../event-processing/event-processing-application.md)
+## 参考资料
+* 另请参阅[流合并器](../stream-processing/event-stream-merger.md)模式，用于统一相关流而_不_改变其格式。
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[标准化器](https://www.enterpriseintegrationpatterns.com/patterns/messaging/Normalizer.html)。
+* Kafka Streams [`map`无状态转换](https://docs.confluent.io/platform/current/streams/developer-guide/dsl-api.html#creating-source-streams-from-ak)文档
+* [Apache Kafka应用程序的错误处理模式](https://www.confluent.io/blog/error-handling-patterns-in-kafka/)是一篇博客文章，详细介绍了[事件处理应用程序](../event-processing/event-processing-application.md)中错误处理的策略和模式

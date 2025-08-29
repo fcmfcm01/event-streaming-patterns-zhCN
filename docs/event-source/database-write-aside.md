@@ -1,51 +1,51 @@
 ---
 seo:
-  title: Database Write Aside
-  description: Simultaneously update a value in a database and create an associated event in an event streaming platform.
+  title: 数据库旁路写入
+  description: 同时更新数据库中的值并在事件流平台中创建关联事件。
 ---
 
-# Database Write Aside
-Applications which write directly to a database may want to produce an associated [Event](../event/event.md) to the [Event Streaming Platform](../event-stream/event-streaming-platform.md) for each write operation allowing downstream [Event Processing Applications](../event-processing/event-processing-application.md) to be notified and consume the [Event](../event/event.md).
+# 数据库旁路写入
 
-## Problem
+直接写入数据库的应用程序可能希望为每个写入操作向[事件流平台](../event-stream/event-streaming-platform.md)产生关联的[事件](../event/event.md)，允许下游[事件处理应用程序](../event-processing/event-processing-application.md)被通知并消费[事件](../event/event.md)。
 
-How do I update a value in a database and create an associated event with the least amount of effort?
+## 问题
 
+我如何以最少的努力更新数据库中的值并创建关联事件？
 
-## Solution
+## 解决方案
 
 ![database-write-aside](../img/database-write-aside.svg)
 
-Write to a database, then write to Kafka. Perform the write to Kafka as the last step in a database transaction to ensure an atomic dual commit (aborting the transaction if the write to Kafka fails). 
+写入数据库，然后写入Kafka。在数据库事务的最后一步执行对Kafka的写入，以确保原子双重提交（如果对Kafka的写入失败则中止事务）。
 
+## 实现
 
-## Implementation
 ```
-//Enable transactions
+//启用事务
 db.setAutoCommit(false);
 
 try{
-   //insert into the DB
+   //插入数据库
    sql = db.prepareStatement("insert into mydb.events values (?)");
    sql.setString(event.toString());
    sql.executeUpdate();
 
-   //insert into Kafka
+   //插入Kafka
    producer.send(event.key(), event.value());
 
-   //commit to the DB
+   //提交到数据库
    db.commit();
 } catch (SQLException e ) {
    db.rollback();
 }
 ```
 
+## 注意事项
 
-## Considerations
-In its default form, this pattern guarantees dual-write for most use cases. However, should the database transaction fail at commit time (say, because the database server has crashed) the write to Kafka cannot be rolled back unless transactions have been enabled. For many use cases, this eventuality will be tolerable as the dual-write can be retried once the failure is fixed, and most event consumers will implement idempotence anyway. However, application programmers need to be aware that there is no firm guarantee. 
+在其默认形式中，此模式为大多数用例保证双重写入。但是，如果数据库事务在提交时失败（比如，因为数据库服务器崩溃），对Kafka的写入无法回滚，除非已启用事务。对于许多用例，这种可能性是可以容忍的，因为一旦故障修复，双重写入可以重试，而且大多数事件消费者无论如何都会实现幂等性。但是，应用程序程序员需要意识到没有严格的保证。
 
-Transactional messaging systems like Kafka can be used to provide stronger guarantees so long as all event consumers have the transactions feature enabled. 
+像Kafka这样的事务性消息系统可以用来提供更强的保证，只要所有事件消费者都启用了事务功能。
 
+## 参考资料
 
-## References
-* See [Database Write Through](database-write-through.md) for an alternative example of writing database changes to an Event Stream
+* 有关将数据库变更写入事件流的替代示例，请参阅[数据库直写](database-write-through.md)

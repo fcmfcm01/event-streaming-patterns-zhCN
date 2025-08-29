@@ -1,26 +1,26 @@
 ---
 seo:
-  title: Event Joiner
-  description: An Event Joiner enhances an Event Stream with lookup data by joining the stream with a Table or another Event Stream.
+  title: 事件连接器
+  description: 事件连接器通过将流与表或另一个事件流连接来增强事件流，提供查找数据。
 ---
 
-# Event Joiner
+# 事件连接器
 
-[Event Streams](../event-stream/event-stream.md) may need to be joined (i.e. enriched) with a [Table](../table/state-table.md) or another Event Stream in order to provide more comprehensive details about their [Events](../event/event.md).
+[事件流](../event-stream/event-stream.md)可能需要与[表](../table/state-table.md)或另一个事件流连接（即丰富），以便提供关于其[事件](../event/event.md)的更全面的详细信息。
 
-## Problem
+## 问题
 
-How can I enrich an Event Stream or Table with additional context?
+我如何用额外的上下文丰富事件流或表？
 
-## Solution
+## 解决方案
 
 ![event joiner](../img/event-joiner.svg)
 
-We can combine Events in a stream with a Table or another Event Stream by performing a join between the two. The join is based on a key shared by the original Event Stream and the other Event Stream or Table. We can also provide a window buffering mechanism based on timestamps, so that we can produce join results when Events from both Event Streams aren't immediately available. Another approach is to join an Event Stream and a Table that contains more static data, resulting in an enriched Event Stream. 
+我们可以通过在两个之间执行连接来将流中的事件与表或另一个事件流组合。连接基于原始事件流与其他事件流或表共享的键。我们还可以提供基于时间戳的窗口缓冲机制，以便当来自两个事件流的事件不是立即可用时，我们可以产生连接结果。另一种方法是将事件流与包含更静态数据的表连接，产生丰富的事件流。
 
-## Implementation
+## 实现
 
-With [Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/), we can create a continuously updating Stream of Events from an existing Kafka topic (in this example, note the similarity to [fact tables](https://en.wikipedia.org/wiki/Fact_table) in data warehouses):
+使用[Apache Flink® SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)，我们可以从现有的Kafka主题创建持续更新的事件流（在此示例中，注意与数据仓库中的[事实表](https://en.wikipedia.org/wiki/Fact_table)的相似性）：
 
 ```sql
 CREATE TABLE ratings (
@@ -29,7 +29,7 @@ CREATE TABLE ratings (
 );
 ```
 
-We can then create a Table from another existing Kafka topic that changes less frequently. This Table serves as our reference data (similar to [dimension tables](https://en.wikipedia.org/wiki/Dimension_(data_warehouse)) in data warehouses).
+然后我们可以从另一个变化较少的现有Kafka主题创建表。此表作为我们的参考数据（类似于数据仓库中的[维度表](https://en.wikipedia.org/wiki/Dimension_(data_warehouse))）。
 
 ```sql
 CREATE TABLE movies (
@@ -39,7 +39,7 @@ CREATE TABLE movies (
 );
 ```
 
-To create a Stream of enriched Events, we perform a join between the Event Stream and the Table.
+要创建丰富事件的流，我们在事件流和表之间执行连接。
 
 ```sql
 SELECT ratings.movie_id as id, title, rating
@@ -47,13 +47,13 @@ FROM ratings
 LEFT JOIN movies ON ratings.movie_id = movies.movie_id;
 ```
 
-## Considerations
+## 注意事项
 
-* We can perform an inner or left-outer join between an Event Stream and a Table.
-* Joins are also useful for initiating subsequent processing when two or more corresponding Events arrive on different Event Streams or Tables.
+* 我们可以在事件流和表之间执行内连接或左外连接。
+* 当两个或更多相应事件到达不同事件流或表时，连接对于启动后续处理也很有用。
 
-## References
+## 参考资料
 
-* [How to join a stream and a lookup table in Kafka Streams](https://developer.confluent.io/confluent-tutorials/joining-stream-table/kstreams/)
-* [Joining a stream and a stream in Apache Flink® SQL](https://developer.confluent.io/confluent-tutorials/joining-stream-stream/flinksql/)
-* [How to join a table and a table in Kafka Streams](https://developer.confluent.io/confluent-tutorials/joining-table-table/kstreams/)
+* [如何在Kafka Streams中连接流和查找表](https://developer.confluent.io/confluent-tutorials/joining-stream-table/kstreams/)
+* [在Apache Flink® SQL中连接流和流](https://developer.confluent.io/confluent-tutorials/joining-stream-stream/flinksql/)
+* [如何在Kafka Streams中连接表和表](https://developer.confluent.io/confluent-tutorials/joining-table-table/kstreams/)

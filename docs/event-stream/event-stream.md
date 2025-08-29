@@ -1,32 +1,37 @@
 ---
 seo:
-  title: Event Stream
-  description: Event Streams are the communication mechanism of Event Processing Applications. You can connect Event Processing Applications together using an Event Stream. Event Streams are often named and contain Events of a well-known format.
+  title: 事件流
+  description: 事件流是事件处理应用程序的通信机制。您可以使用事件流连接事件处理应用程序。事件流通常被命名并包含已知格式的事件。
 ---
-# Event Stream
-[Event Processing Applications](../event-processing/event-processing-application.md) need to communicate, and ideally the communication is based on [Events](../event/event.md). The applications need a standard mechanism to use for this communication.
 
-## Problem
-How can [Event Processors](../event-processing/event-processor.md) and applications communicate with each other using event streaming?
+# 事件流
 
-## Solution
+[事件处理应用程序](../event-processing/event-processing-application.md)需要通信，理想情况下通信基于[事件](../event/event.md)。应用程序需要用于此通信的标准机制。
+
+## 问题
+
+[事件处理器](../event-processing/event-processor.md)和应用程序如何使用事件流相互通信？
+
+## 解决方案
 ![event-stream](../img/event-stream.svg)
 
-Connect the Event Processing Applications with an Event Stream. [Event Sources](../event-source/event-source.md) produce events to the Event Stream, and Event Processors and [Event Sinks](../event-sink/event-sink.md) consume them. Event Streams are named, allowing communication over a specific stream of events. Notice how Event Streams decouple the source and sink applications, which communicate indirectly and asynchronously with each other through events. Additionally, event data formats are often validated, in order to govern the communication between applications.
+使用事件流连接事件处理应用程序。[事件源](../event-source/event-source.md)向事件流产生事件，事件处理器和[事件接收器](../event-sink/event-sink.md)消费它们。事件流被命名，允许在特定事件流上进行通信。注意事件流如何解耦源和接收器应用程序，它们通过事件间接和异步地相互通信。此外，事件数据格式通常被验证，以管理应用程序之间的通信。
 
-Generally speaking, an Event Stream records the history of what has happened in the world as a sequence of events (think: a sequence of facts). Examples of streams would be a sales ledger or the sequence of moves in a chess match. This history is an ordered sequence or chain of events, so we know which event happened before another event and can infer causality (for example, “White moved the e2 pawn to e4; then Black moved the e7 pawn to e5”). A stream thus represents both the past and the present: as we go from today to tomorrow -- or from one millisecond to the next -- new events are constantly being appended to the history.
+一般来说，事件流将世界上发生的事情的历史记录为事件序列（想想：事实序列）。流的示例将是销售分类账或国际象棋比赛中的移动序列。这个历史是有序的事件序列或链，所以我们知道哪个事件在另一个事件之前发生，并且可以推断因果关系（例如，"白方将e2兵移动到e4；然后黑方将e7兵移动到e5"）。因此，流代表过去和现在：当我们从今天到明天——或从一毫秒到下一毫秒——新事件不断被附加到历史中。
 
-Conceptually, a stream provides _immutable_ data. It supports only inserting (appending) new events, and existing events cannot be changed. Streams are persistent, durable, and fault-tolerant. Unlike traditional message queues, events stored in streams can be read as often as needed by Event Sinks and Event Processing Applications, and they are not deleted after consumption. Instead, retention policies control how events are retained. Events in a stream can be _keyed_, and we can have many events for one key. For a stream of payments of all customers, the customer ID might be the key (cf. related patterns such as [Partitioned Parallelism](../event-stream/partitioned-parallelism.md)).
+从概念上讲，流提供_不可变_数据。它只支持插入（附加）新事件，现有事件不能被更改。流是持久的、耐用的和容错的。与传统消息队列不同，存储在流中的事件可以被事件接收器和事件处理应用程序根据需要多次读取，并且在消费后不会被删除。相反，保留策略控制事件如何被保留。流中的事件可以是_键控的_，我们可以为一个键有许多事件。对于所有客户的支付流，客户ID可能是键（参见相关模式，如[分区并行性](../event-stream/partitioned-parallelism.md)）。
 
-## Implementation
-In [Apache Kafka®](/learn-kafka/apache-kafka/events/), Event Streams are called _topics_. Kafka allows you to define policies which dictate how events are retained, using [time or size limitations](../event-storage/limited-retention-event-stream.md) or [retaining events forever](../event-storage/infinite-retention-event-stream.md). Kafka consumers (Event Sinks and Event Processing Applications) are able to decide where in an event stream to begin reading. They can choose to begin reading from the oldest or newest event, or seek to a specific location in the topic, using the event's timestamp or position (called the _offset_).
+## 实现
 
-Streaming technologies support Kafka-based Event Streams as a core abstraction. For example:
+在[Apache Kafka®](/learn-kafka/apache-kafka/events/)中，事件流被称为_主题_。Kafka允许您定义策略来规定如何保留事件，使用[时间或大小限制](../event-storage/limited-retention-event-stream.md)或[永久保留事件](../event-storage/infinite-retention-event-stream.md)。Kafka消费者（事件接收器和事件处理应用程序）能够决定在事件流中的何处开始读取。他们可以选择从最旧或最新的事件开始读取，或使用事件的时间戳或位置（称为_偏移_）寻找到主题中的特定位置。
 
-* The [Kafka Streams DSL API](https://kafka.apache.org/30/documentation/streams/developer-guide/dsl-api.html) provides abstractions for Event Streams, notably the [`KStream`](https://docs.confluent.io/platform/current/streams/javadocs/javadoc/org/apache/kafka/streams/kstream/KStream.html) interface for unbounded data streams and the [`KTable`](https://docs.confluent.io/platform/current/streams/javadocs/javadoc/org/apache/kafka/streams/kstream/KTable.html) interface for changelog data on keyed records (e.g., a `KTable` of product updates keyed on product ID).
-* The Apache Flink® [`Table`](https://nightlies.apache.org/flink/flink-docs-stable/api/java/org/apache/flink/table/api/Table.html) interface is the Flink (Java) Table API's core abstraction for Event Streams. PyFlink's Table API is also built around a [`Table`](https://pyflink.readthedocs.io/en/main/getting_started/quickstart/table_api.html#Table-Creation) object.
-* [Flink SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/) supports Event Streams using a familiar standard SQL syntax.
+流技术支持基于Kafka的事件流作为核心抽象。例如：
 
-## References
-* This pattern is derived from [Message Channel](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageChannel.html) in _Enterprise Integration Patterns_, by Gregor Hohpe and Bobby Woolf.
-* Tutorials demonstrating how to build basic stream processing applications that manipulate Event Streams: with [Kafka Streams](https://developer.confluent.io/confluent-tutorials/creating-first-apache-kafka-streams-application/kstreams/), with [Flink SQL](https://developer.confluent.io/confluent-tutorials/filtering/flinksql/), with the [Flink Table API](https://developer.confluent.io/courses/flink-table-api-java/exercise-connecting-to-confluent-cloud/).
+* [Kafka Streams DSL API](https://kafka.apache.org/30/documentation/streams/developer-guide/dsl-api.html)为事件流提供抽象，特别是用于无界数据流的[`KStream`](https://docs.confluent.io/platform/current/streams/javadocs/javadoc/org/apache/kafka/streams/kstream/KStream.html)接口和用于键控记录变更日志数据的[`KTable`](https://docs.confluent.io/platform/current/streams/javadocs/javadoc/org/apache/kafka/streams/kstream/KTable.html)接口（例如，按产品ID键控的产品更新`KTable`）。
+* Apache Flink® [`Table`](https://nightlies.apache.org/flink/flink-docs-stable/api/java/org/apache/flink/table/api/Table.html)接口是Flink（Java）Table API用于事件流的核心抽象。PyFlink的Table API也围绕[`Table`](https://pyflink.readthedocs.io/en/main/getting_started/quickstart/table_api.html#Table-Creation)对象构建。
+* [Flink SQL](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/gettingstarted/)使用熟悉的标准SQL语法支持事件流。
+
+## 参考资料
+
+* 此模式源自Gregor Hohpe和Bobby Woolf的《企业集成模式》中的[消息通道](https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageChannel.html)。
+* 演示如何构建操作事件流的基本流处理应用程序的教程：使用[Kafka Streams](https://developer.confluent.io/confluent-tutorials/creating-first-apache-kafka-streams-application/kstreams/)，使用[Flink SQL](https://developer.confluent.io/confluent-tutorials/filtering/flinksql/)，使用[Flink Table API](https://developer.confluent.io/courses/flink-table-api-java/exercise-connecting-to-confluent-cloud/)。
